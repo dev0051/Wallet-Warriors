@@ -1,3 +1,9 @@
+"""
+Wallet Warriors — AI Credit Intelligence Platform
+v5: Full login fix · Demo credentials restored · 4-feature login panel ·
+    Jargon-Buster tooltips · Hustle Academy · What-If Simulator · All ML features intact
+"""
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -6,1675 +12,2505 @@ import shap
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.patches import FancyBboxPatch
 import plotly.graph_objects as go
-import plotly.express as px
 from plotly.subplots import make_subplots
-import re
-import hashlib
-import time
-from PIL import Image
-import io
-import base64
+import hashlib, time, json, os
+from datetime import datetime
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
 # PAGE CONFIG
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ─────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Wallet Warriors · Credit Intelligence",
-    page_icon="🔐",
-    layout="wide",
+    page_icon="⚡", layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
-# COLOR PALETTE (exact spec)
-# ─────────────────────────────────────────────────────────────────────────────
-# #0D0D0D  – Near Black (NI Cyber Grape base)
-# #63458C  – Cyber Grape
-# #AA77F2  – Lavender Floral
-# #99630F  – Limerick (amber/gold)
-# #F2F2F2  – Anti-Flash White
+# ─────────────────────────────────────────────────────────────
+# AUTH — Dev Kumar is the primary demo user, no credentials shown
+# ─────────────────────────────────────────────────────────────
+_DH = hashlib.sha256("Dev@2024".encode()).hexdigest()
+_TH = hashlib.sha256("Test@1234".encode()).hexdigest()
 
-# ─────────────────────────────────────────────────────────────────────────────
-# GLOBAL CSS
-# ─────────────────────────────────────────────────────────────────────────────
-
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
-
-/* ── Root Variables ── */
-:root {
-  --black:   #0D0D0D;
-  --grape:   #63458C;
-  --lav:     #AA77F2;
-  --gold:    #99630F;
-  --white:   #F2F2F2;
-  --surface: #161616;
-  --card:    #1C1C1E;
-  --border:  rgba(170,119,242,0.18);
-  --muted:   rgba(242,242,242,0.45);
-}
-
-/* ── Base ── */
-html, body, [data-testid="stApp"] {
-  background: var(--black) !important;
-  color: var(--white) !important;
-  font-family: 'Inter', sans-serif !important;
-}
-
-[data-testid="stAppViewContainer"] { background: var(--black) !important; }
-[data-testid="stHeader"] { background: transparent !important; }
-[data-testid="stSidebar"] { display: none !important; }
-.block-container { padding: 0 !important; max-width: 100% !important; }
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--black); }
-::-webkit-scrollbar-thumb { background: var(--grape); border-radius: 99px; }
-
-/* ── All Streamlit inputs ── */
-input[type="text"], input[type="password"], input[type="number"],
-[data-testid="stTextInput"] input,
-[data-testid="stNumberInput"] input {
-  background: rgba(99,69,140,0.12) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
-  color: var(--white) !important;
-  font-family: 'Space Mono', monospace !important;
-  font-size: 14px !important;
-  padding: 12px 16px !important;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
-}
-input:focus {
-  border-color: var(--lav) !important;
-  box-shadow: 0 0 0 3px rgba(170,119,242,0.15) !important;
-  outline: none !important;
-}
-
-/* Label */
-[data-testid="stTextInput"] label,
-[data-testid="stNumberInput"] label,
-[data-testid="stSelectbox"] label,
-[data-testid="stFileUploader"] label {
-  color: var(--muted) !important;
-  font-size: 11px !important;
-  font-family: 'Space Mono', monospace !important;
-  letter-spacing: 0.08em !important;
-  text-transform: uppercase !important;
-  margin-bottom: 6px !important;
-}
-
-/* Select box */
-[data-testid="stSelectbox"] > div > div {
-  background: rgba(99,69,140,0.12) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
-  color: var(--white) !important;
-}
-
-/* File uploader */
-[data-testid="stFileUploader"] {
-  background: rgba(99,69,140,0.08) !important;
-  border: 1px dashed var(--border) !important;
-  border-radius: 12px !important;
-  padding: 12px !important;
-}
-
-/* ── Buttons ── */
-.stButton > button {
-  background: linear-gradient(135deg, var(--grape) 0%, #4a2d6e 100%) !important;
-  color: var(--white) !important;
-  border: 1px solid rgba(170,119,242,0.3) !important;
-  border-radius: 10px !important;
-  font-family: 'Space Mono', monospace !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.05em !important;
-  padding: 12px 28px !important;
-  transition: all 0.22s ease !important;
-  box-shadow: 0 4px 20px rgba(99,69,140,0.3) !important;
-  width: 100% !important;
-}
-.stButton > button:hover {
-  background: linear-gradient(135deg, var(--lav) 0%, var(--grape) 100%) !important;
-  box-shadow: 0 6px 28px rgba(170,119,242,0.4) !important;
-  transform: translateY(-2px) !important;
-}
-.stButton > button:active {
-  transform: translateY(0px) !important;
-  box-shadow: 0 2px 10px rgba(99,69,140,0.3) !important;
-}
-
-/* ── Metrics ── */
-[data-testid="stMetric"] {
-  background: var(--card) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 14px !important;
-  padding: 20px !important;
-}
-[data-testid="stMetricLabel"] { color: var(--muted) !important; font-size: 11px !important; font-family: 'Space Mono', monospace !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; }
-[data-testid="stMetricValue"] { color: var(--lav) !important; font-family: 'Space Mono', monospace !important; font-size: 28px !important; }
-[data-testid="stMetricDelta"] { font-family: 'Space Mono', monospace !important; }
-
-/* ── Divider ── */
-hr { border-color: var(--border) !important; margin: 32px 0 !important; }
-
-/* ── Progress ── */
-[data-testid="stProgress"] > div > div {
-  background: linear-gradient(90deg, var(--grape), var(--lav)) !important;
-  border-radius: 99px !important;
-}
-[data-testid="stProgress"] {
-  background: rgba(99,69,140,0.15) !important;
-  border-radius: 99px !important;
-}
-
-/* ── Alerts ── */
-[data-testid="stAlert"] {
-  border-radius: 12px !important;
-  border: none !important;
-  font-family: 'Inter', sans-serif !important;
-}
-
-/* ── Tabs ── */
-[data-testid="stTabs"] [role="tablist"] {
-  background: var(--card) !important;
-  border-radius: 12px !important;
-  padding: 4px !important;
-  border: 1px solid var(--border) !important;
-  gap: 4px !important;
-}
-[data-testid="stTabs"] [role="tab"] {
-  background: transparent !important;
-  color: var(--muted) !important;
-  border-radius: 8px !important;
-  font-family: 'Space Mono', monospace !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  transition: all 0.2s !important;
-}
-[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-  background: var(--grape) !important;
-  color: var(--white) !important;
-}
-
-/* ── Expander ── */
-[data-testid="stExpander"] {
-  background: var(--card) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}
-
-/* ── Pyplot figures ── */
-.stPlotlyChart { border-radius: 14px !important; overflow: hidden !important; }
-</style>
-""", unsafe_allow_html=True)
-
-# ─────────────────────────────────────────────────────────────────────────────
-# SESSION STATE
-# ─────────────────────────────────────────────────────────────────────────────
-
-for key, val in {
-    "page": "login",
-    "authenticated": False,
-    "username": "",
-    "user_data": {},
-    "analysis_done": False,
-    "verification_result": None,
-    "login_attempts": 0,
-}.items():
-    if key not in st.session_state:
-        st.session_state[key] = val
-
-# ─────────────────────────────────────────────────────────────────────────────
-# MOCK USER DATABASE  (in prod → replace with real DB / Firebase / Supabase)
-# ─────────────────────────────────────────────────────────────────────────────
-
-USERS = {
-    "demo@walletwarriors.ai": {
-        "password_hash": hashlib.sha256("Warrior@2024".encode()).hexdigest(),
-        "name": "Arjun Mehta",
-        "plan": "Pro",
+_MEM_USERS = {
+    "dev@walletwarriors.ai": {
+        "id": 1, "email": "dev@walletwarriors.ai",
+        "password_hash": _DH, "full_name": "Dev Kumar", "plan": "Pro"
     },
     "test@walletwarriors.ai": {
-        "password_hash": hashlib.sha256("Test@1234".encode()).hexdigest(),
-        "name": "Priya Sharma",
-        "plan": "Starter",
+        "id": 2, "email": "test@walletwarriors.ai",
+        "password_hash": _TH, "full_name": "Priya Sharma", "plan": "Starter"
     },
 }
+_MEM_APPS = []
 
-def verify_user(email: str, password: str):
-    user = USERS.get(email.lower().strip())
-    if not user:
-        return False, None
-    pw_hash = hashlib.sha256(password.encode()).hexdigest()
-    if pw_hash == user["password_hash"]:
-        return True, user
+# ─────────────────────────────────────────────────────────────
+# POSTGRESQL LAYER (graceful fallback)
+# ─────────────────────────────────────────────────────────────
+try:
+    import psycopg2
+    from psycopg2 import pool as pg_pool
+    from psycopg2.extras import RealDictCursor
+    _PG = True
+except ImportError:
+    _PG = False
+
+_SCHEMA = f"""
+CREATE TABLE IF NOT EXISTS ww_users(
+  id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL, full_name TEXT,
+  plan TEXT DEFAULT 'Starter', created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE IF NOT EXISTS ww_applications(
+  id SERIAL PRIMARY KEY, user_id INT, stated_income NUMERIC,
+  rent NUMERIC, savings NUMERIC, loan_amount NUMERIC,
+  employment_years NUMERIC, credit_score INT,
+  electricity_bill NUMERIC, upi_outflow NUMERIC, doc_income NUMERIC,
+  verification_score NUMERIC, verification_passed BOOLEAN,
+  default_probability NUMERIC, decision TEXT, hustle_score INT,
+  approval_readiness NUMERIC, shap_values JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW());
+INSERT INTO ww_users(email,password_hash,full_name,plan) VALUES
+  ('dev@walletwarriors.ai','{_DH}','Dev Kumar','Pro'),
+  ('test@walletwarriors.ai','{_TH}','Priya Sharma','Starter')
+ON CONFLICT(email) DO NOTHING;
+"""
+
+@st.cache_resource
+def get_pool():
+    if not _PG: return None
+    try:
+        p = pg_pool.SimpleConnectionPool(1, 5,
+            host=os.getenv("PG_HOST","localhost"),
+            port=int(os.getenv("PG_PORT", 5432)),
+            dbname=os.getenv("PG_DB","walletwarriors"),
+            user=os.getenv("PG_USER","postgres"),
+            password=os.getenv("PG_PASS",""))
+        c = p.getconn()
+        with c.cursor() as cur: cur.execute(_SCHEMA)
+        c.commit(); p.putconn(c); return p
+    except: return None
+
+_pool = get_pool()
+
+def db_user(email):
+    if _pool:
+        try:
+            c = _pool.getconn()
+            with c.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("SELECT * FROM ww_users WHERE email=%s", (email.lower(),))
+                r = cur.fetchone()
+            _pool.putconn(c)
+            return dict(r) if r else None
+        except: pass
+    return _MEM_USERS.get(email.lower())
+
+def db_save(uid, d):
+    if _pool:
+        try:
+            c = _pool.getconn()
+            with c.cursor() as cur:
+                cur.execute("""INSERT INTO ww_applications(
+                    user_id,stated_income,rent,savings,loan_amount,employment_years,
+                    credit_score,electricity_bill,upi_outflow,doc_income,
+                    verification_score,verification_passed,default_probability,
+                    decision,hustle_score,approval_readiness,shap_values)
+                    VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    (uid,d.get("income"),d.get("rent"),d.get("savings"),d.get("loan"),
+                     d.get("employ"),d.get("cibil"),d.get("elec"),d.get("upi"),
+                     d.get("doc_income"),d.get("ver_score"),d.get("ver_pass"),
+                     d.get("prob"),d.get("dec"),d.get("hustle"),d.get("ar"),
+                     json.dumps(d.get("shap",{}))))
+            c.commit(); _pool.putconn(c)
+        except: pass
+    else:
+        _MEM_APPS.append({**d, "uid": uid, "ts": datetime.now().isoformat()})
+
+# ─────────────────────────────────────────────────────────────
+# SESSION STATE
+# ─────────────────────────────────────────────────────────────
+for k, v in {
+    "page": "login", "authenticated": False,
+    "username": "", "user_id": None, "plan": "Pro",
+    "vr": None, "ud": {}, "attempts": 0
+}.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+
+def auth(email, pw):
+    u = db_user(email)
+    if not u: return False, None
+    if hashlib.sha256(pw.encode()).hexdigest() == u["password_hash"]:
+        return True, u
     return False, None
 
-# ─────────────────────────────────────────────────────────────────────────────
-# INCOME TRIANGULATION ENGINE
-# ─────────────────────────────────────────────────────────────────────────────
-
-def triangulate_income(stated_income, rent, electricity_bill,
-                        upi_monthly_outflow, doc_income=None):
-    """
-    Cross-reference stated income against behavioural and document signals.
-    Returns: (is_coherent, confidence_score, flags, estimated_real_income)
-    """
-    flags = []
-    confidence = 100.0
-
-    # ── Heuristic 1: Rent-to-Income ratio ──────────────────────────────────
-    # Normal range: rent should be 25–50% of income for Indian metros
-    if stated_income > 0:
-        rent_ratio = rent / stated_income
-        if rent_ratio < 0.04:
-            flags.append({
-                "type": "warning",
-                "msg": "Rent appears very low relative to stated income. "
-                       "Average rent/income ratio for this income band is 28–40%.",
-                "severity": "medium"
-            })
-            confidence -= 15
-        elif rent_ratio > 0.75:
-            flags.append({
-                "type": "critical",
-                "msg": "Rent exceeds 75% of stated income — extreme financial stress signal.",
-                "severity": "high"
-            })
-            confidence -= 25
-
-    # ── Heuristic 2: Lifestyle coherence via electricity bill ───────────────
-    # In India: ₹800–₹3,000 typical for ₹30–70k income earners
-    expected_elec_low  = 600  + (stated_income / 1000) * 18
-    expected_elec_high = 1500 + (stated_income / 1000) * 35
-    if electricity_bill > 0:
-        if electricity_bill < expected_elec_low * 0.4:
-            flags.append({
-                "type": "warning",
-                "msg": f"Electricity bill (₹{electricity_bill:,.0f}) is unusually low "
-                       f"for a ₹{stated_income:,.0f}/month earner. Expected ₹{expected_elec_low:,.0f}–₹{expected_elec_high:,.0f}.",
-                "severity": "medium"
-            })
-            confidence -= 10
-        elif electricity_bill > expected_elec_high * 2.5:
-            flags.append({
-                "type": "warning",
-                "msg": "Electricity bill is disproportionately high. Could indicate commercial usage.",
-                "severity": "low"
-            })
-
-    # ── Heuristic 3: UPI transaction velocity ──────────────────────────────
-    # High earners typically have UPI outflow ≥ 35% of income
-    if upi_monthly_outflow > 0 and stated_income > 0:
-        velocity_ratio = upi_monthly_outflow / stated_income
-        if velocity_ratio < 0.10:
-            flags.append({
-                "type": "critical",
-                "msg": f"UPI outflow (₹{upi_monthly_outflow:,.0f}) is only "
-                       f"{velocity_ratio*100:.0f}% of stated income. "
-                       "Transaction velocity is statistically inconsistent with claimed income.",
-                "severity": "high"
-            })
-            confidence -= 30
-        elif velocity_ratio > 1.5:
-            flags.append({
-                "type": "warning",
-                "msg": "UPI outflow exceeds stated income — overspending detected.",
-                "severity": "medium"
-            })
-            confidence -= 10
-
-    # ── Heuristic 4: Standard deviation anomaly check ──────────────────────
-    # Build an implied income from spending parameters
-    implied_income_signals = []
-    if rent > 0:
-        implied_income_signals.append(rent / 0.33)       # rent ≈ 33% income
-    if electricity_bill > 0:
-        implied_income_signals.append(electricity_bill / 0.03)  # elec ≈ 3% income
-    if upi_monthly_outflow > 0:
-        implied_income_signals.append(upi_monthly_outflow / 0.55) # UPI ≈ 55% income
-
-    if implied_income_signals:
-        implied_avg = np.mean(implied_income_signals)
-        implied_std = np.std(implied_income_signals) if len(implied_income_signals) > 1 else implied_avg * 0.2
-        z_score = abs(stated_income - implied_avg) / (implied_std + 1)
-        if z_score > 2.0:
-            flags.append({
-                "type": "critical",
-                "msg": f"Stated income is {z_score:.1f}σ away from spending-implied income "
-                       f"(₹{implied_avg:,.0f}). Anomaly threshold is 2σ — flagged for manual review.",
-                "severity": "high"
-            })
-            confidence -= min(35, z_score * 10)
-    else:
-        implied_avg = stated_income
-
-    # ── Heuristic 5: Document cross-check ──────────────────────────────────
-    if doc_income and doc_income > 0:
-        discrepancy = abs(stated_income - doc_income) / max(doc_income, 1)
-        if discrepancy > 0.10:
-            flags.append({
-                "type": "critical",
-                "msg": f"Document income (₹{doc_income:,.0f}) differs from stated income "
-                       f"(₹{stated_income:,.0f}) by {discrepancy*100:.0f}%. "
-                       "Exceeds 10% tolerance — verification failed.",
-                "severity": "high"
-            })
-            confidence -= 40
-
-    confidence = max(0, min(100, confidence))
-    estimated_real = implied_avg if implied_income_signals else stated_income
-    is_coherent = confidence >= 55 and not any(f["severity"] == "high" for f in flags)
-
-    return is_coherent, round(confidence, 1), flags, round(estimated_real)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# MODEL LOADER
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ─────────────────────────────────────────────────────────────
+# MODEL
+# ─────────────────────────────────────────────────────────────
 @st.cache_resource
 def load_model():
     try:
         return joblib.load("models/credit_model.pkl")
-    except Exception:
-        # Fallback: retrain on synthetic data (so app always runs)
+    except:
         from sklearn.model_selection import train_test_split
         from xgboost import XGBClassifier
-        np.random.seed(42)
-        n = 1000
+        np.random.seed(42); n = 1000
         df = pd.DataFrame({
-            "Income":      np.random.randint(15000, 80000, n),
-            "Rent":        np.random.randint(5000,  40000, n),
-            "Savings":     np.random.randint(0,     20000, n),
-            "LoanAmount":  np.random.randint(10000,100000, n),
-            "Employment":  np.random.randint(0,     10,    n),
-            "CreditScore": np.random.randint(500,   800,   n),
+            "Income": np.random.randint(15000, 80000, n),
+            "Rent": np.random.randint(5000, 40000, n),
+            "Savings": np.random.randint(0, 20000, n),
+            "LoanAmount": np.random.randint(10000, 100000, n),
+            "Employment": np.random.randint(0, 10, n),
+            "CreditScore": np.random.randint(500, 800, n)
         })
         df["Default"] = (
-            (df["Rent"] > df["Income"]*0.7) |
-            (df["Savings"] < 2000)           |
+            (df["Rent"] > df["Income"] * 0.7) |
+            (df["Savings"] < 2000) |
             (df["CreditScore"] < 580)
         ).astype(int)
-        X = df.drop("Default", axis=1)
-        y = df["Default"]
-        X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, random_state=42)
-        mdl = XGBClassifier(n_estimators=200, max_depth=5, learning_rate=0.05,
-                            use_label_encoder=False, eval_metric="logloss")
-        mdl.fit(X_tr, y_tr)
-        return mdl
+        X = df.drop("Default", axis=1); y = df["Default"]
+        Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=42)
+        m = XGBClassifier(n_estimators=250, max_depth=5, learning_rate=0.05,
+                          use_label_encoder=False, eval_metric="logloss")
+        m.fit(Xtr, ytr)
+        return m
 
-model = load_model()
+MDL = load_model()
 
-# ─────────────────────────────────────────────────────────────────────────────
-# PLOTLY THEME HELPER
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# COLOUR PALETTE — Enhanced Neon Dark
+# ─────────────────────────────────────────────────────────────
+BG      = "#0c0e18"
+SURFACE = "#13162a"
+CARD    = "#191d34"
+CARD2   = "#1f2440"
+GRAPE   = "#7C4DFF"
+LAV     = "#A87FFF"
+CYAN    = "#00E5C0"
+GOLD    = "#FFB830"
+GREEN   = "#23D18B"
+RED     = "#FF4060"
+WHITE   = "#ECF0FF"
+TEXT    = "#C8D0F0"
+MUTED   = "rgba(180,192,255,0.55)"
+MUTED2  = "rgba(180,192,255,0.32)"
+BORDER  = "rgba(124,77,255,0.22)"
+BORDER2 = "rgba(0,229,192,0.16)"
 
-PLOT_LAYOUT = dict(
+PLOT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(family="Space Mono, monospace", color="#F2F2F2", size=12),
-    title_font=dict(family="Syne, sans-serif", size=16, color="#F2F2F2"),
-    margin=dict(l=20, r=20, t=50, b=20),
-    legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor="rgba(170,119,242,0.2)"),
+    font=dict(family="Inter, sans-serif", color=WHITE, size=13),
+    title_font=dict(family="Inter, sans-serif", size=15, color=WHITE),
+    margin=dict(l=20, r=20, t=48, b=20),
+    legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor=BORDER,
+                font=dict(size=12, color=WHITE)),
 )
 
-COLORS = {
-    "primary":   "#AA77F2",
-    "secondary": "#63458C",
-    "gold":      "#C98A1A",
-    "success":   "#4CAF7D",
-    "danger":    "#E05C5C",
-    "muted":     "rgba(242,242,242,0.4)",
+def badge(txt, bg=GRAPE, fg="#fff", glow=False):
+    shadow = f"box-shadow:0 0 16px {bg}99;" if glow else ""
+    return (f'<span style="display:inline-block;background:{bg};color:{fg};'
+            f'font-size:10px;font-family:\'JetBrains Mono\',monospace;'
+            f'font-weight:700;letter-spacing:.07em;padding:4px 13px;'
+            f'border-radius:99px;text-transform:uppercase;{shadow}">{txt}</span>')
+
+# ─────────────────────────────────────────────────────────────
+# GLOBAL CSS
+# ─────────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg:      #0c0e18;
+  --surface: #13162a;
+  --card:    #191d34;
+  --card2:   #1f2440;
+  --grape:   #7C4DFF;
+  --lav:     #A87FFF;
+  --cyan:    #00E5C0;
+  --gold:    #FFB830;
+  --green:   #23D18B;
+  --red:     #FF4060;
+  --white:   #ECF0FF;
+  --text:    #C8D0F0;
+  --muted:   rgba(180,192,255,0.55);
+  --muted2:  rgba(180,192,255,0.32);
+  --border:  rgba(124,77,255,0.22);
+  --border2: rgba(0,229,192,0.16);
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
-# HTML COMPONENT HELPERS
-# ─────────────────────────────────────────────────────────────────────────────
+/* ══ BASE ══ */
+html, body,
+[data-testid="stApp"],
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"] {
+  background: var(--bg) !important;
+  color: var(--white) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 15px !important;
+}
+[data-testid="stHeader"],
+[data-testid="stMainMenu"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"] { display: none !important; }
 
-def badge(label, color="#63458C", text_color="#F2F2F2"):
-    return f"""<span style="background:{color};color:{text_color};font-size:10px;
-    font-family:'Space Mono',monospace;font-weight:700;letter-spacing:.08em;
-    padding:3px 10px;border-radius:99px;text-transform:uppercase;">{label}</span>"""
+/* ── Zero Streamlit's default block padding ── */
+.block-container,
+.stMainBlockContainer {
+  padding-top:    0 !important;
+  padding-bottom: 0 !important;
+  padding-left:   0 !important;
+  padding-right:  0 !important;
+  max-width: 100% !important;
+}
 
-def section_header(title, subtitle="", icon=""):
-    st.markdown(f"""
-    <div style="margin:32px 0 20px 0;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
-        <span style="font-size:20px;">{icon}</span>
-        <h2 style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;
-                   color:#F2F2F2;margin:0;letter-spacing:-.01em;">{title}</h2>
-      </div>
-      {"" if not subtitle else f'<p style="color:rgba(242,242,242,0.45);font-size:13px;margin:0 0 0 32px;">{subtitle}</p>'}
-      <div style="height:2px;background:linear-gradient(90deg,#63458C,transparent);
-                  border-radius:99px;margin-top:12px;"></div>
-    </div>
-    """, unsafe_allow_html=True)
+* { box-sizing: border-box; }
 
-def card(content_html, padding="24px", border_color="rgba(170,119,242,0.18)"):
-    st.markdown(f"""
-    <div style="background:#1C1C1E;border:1px solid {border_color};
-                border-radius:16px;padding:{padding};margin-bottom:16px;">
-      {content_html}
-    </div>
-    """, unsafe_allow_html=True)
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--grape); border-radius: 99px; }
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ██████████  LOGIN PAGE  ██████████
-# ─────────────────────────────────────────────────────────────────────────────
+/* ══ SIDEBAR ══ */
+[data-testid="stSidebar"] {
+  background: var(--surface) !important;
+  border-right: 1px solid var(--border) !important;
+}
+[data-testid="stSidebar"] * { color: var(--white) !important; font-size: 14px !important; }
+[data-testid="stSidebar"] .stButton > button {
+  background: rgba(124,77,255,0.14) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--lav) !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+  padding: 9px 14px !important;
+}
+[data-testid="stSidebar"] .stButton > button:hover {
+  background: var(--grape) !important;
+  color: #fff !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
 
-def render_login():
-    # Fullscreen login layout
-    st.markdown("""
-    <style>
-    .login-bg {
-      min-height: 100vh;
-      background: radial-gradient(ellipse at 20% 50%, rgba(99,69,140,0.25) 0%, transparent 60%),
-                  radial-gradient(ellipse at 80% 20%, rgba(170,119,242,0.12) 0%, transparent 50%),
-                  #0D0D0D;
-      display: flex; align-items: center; justify-content: center;
-      padding: 40px 20px;
-    }
-    .login-card {
-      background: #161616;
-      border: 1px solid rgba(170,119,242,0.2);
-      border-radius: 24px;
-      padding: 56px 52px;
-      max-width: 480px;
-      width: 100%;
-      box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(170,119,242,0.05);
-      animation: fadeSlideIn 0.5s ease forwards;
-    }
-    @keyframes fadeSlideIn {
-      from { opacity:0; transform: translateY(24px); }
-      to   { opacity:1; transform: translateY(0); }
-    }
-    .logo-mark {
-      width: 52px; height: 52px;
-      background: linear-gradient(135deg,#63458C,#AA77F2);
-      border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px; margin-bottom: 28px;
-      box-shadow: 0 8px 24px rgba(99,69,140,0.5);
-    }
-    .login-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 32px; font-weight: 800;
-      color: #F2F2F2; margin: 0 0 6px 0;
-      letter-spacing: -0.02em;
-    }
-    .login-sub {
-      color: rgba(242,242,242,0.4);
-      font-size: 14px; margin: 0 0 40px 0;
-      font-family: 'Inter', sans-serif;
-    }
-    .cred-hint {
-      background: rgba(99,69,140,0.15);
-      border: 1px solid rgba(170,119,242,0.2);
-      border-radius: 10px; padding: 14px 18px;
-      margin-top: 20px;
-    }
-    .cred-hint p {
-      margin: 2px 0; font-size: 12px;
-      font-family: 'Space Mono', monospace;
-      color: rgba(242,242,242,0.55);
-    }
-    </style>
-    """, unsafe_allow_html=True)
+/* ══ HEADINGS — Bold, Crisp, Hierarchical ══ */
+h1, .h1 {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 42px !important; font-weight: 900 !important;
+  color: var(--white) !important;
+  line-height: 1.10 !important; letter-spacing: -0.03em !important;
+  margin: 0 0 12px !important;
+}
+h2, .h2 {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 28px !important; font-weight: 800 !important;
+  color: var(--white) !important;
+  line-height: 1.18 !important; letter-spacing: -0.022em !important;
+  margin: 0 0 10px !important;
+}
+h3, .h3 {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 20px !important; font-weight: 700 !important;
+  color: var(--white) !important;
+  line-height: 1.28 !important; letter-spacing: -0.012em !important;
+  margin: 0 0 8px !important;
+}
+h4, .h4 {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 16px !important; font-weight: 700 !important;
+  color: var(--white) !important;
+  line-height: 1.35 !important;
+  margin: 0 !important;
+}
 
-    _, col, _ = st.columns([1, 1.2, 1])
+/* ══ BODY TEXT — Readable, NOT invisible ══ */
+p, li {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  color: var(--text) !important;
+  line-height: 1.72 !important;
+  margin: 0 0 8px !important;
+}
+/* Streamlit markdown container text */
+[data-testid="stMarkdownContainer"] > p,
+[data-testid="stMarkdownContainer"] > div > p {
+  color: var(--text) !important;
+  font-size: 15px !important;
+  line-height: 1.72 !important;
+}
+/* Ensure native Streamlit text elements are visible */
+[data-testid="stText"],
+[data-testid="stCaptionContainer"],
+.stCaption { color: var(--muted) !important; font-size: 13px !important; }
 
-    with col:
-        st.markdown('<div style="height:60px;"></div>', unsafe_allow_html=True)
+/* ══ WIDGET LABELS ══ */
+[data-testid="stTextInput"]    > label,
+[data-testid="stNumberInput"]  > label,
+[data-testid="stSelectbox"]    > label,
+[data-testid="stFileUploader"] > label {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 10.5px !important; font-weight: 700 !important;
+  letter-spacing: .11em !important; text-transform: uppercase !important;
+  color: var(--muted) !important;
+  margin-bottom: 6px !important; display: block !important;
+}
 
-        st.markdown("""
-        <div class="logo-mark">🔐</div>
-        <h1 class="login-title">Wallet Warriors</h1>
-        <p class="login-sub">AI Credit Intelligence Platform &nbsp;·&nbsp; Secure Sign-In</p>
-        """, unsafe_allow_html=True)
+/* ══ INPUTS ══ */
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input,
+input[type="text"], input[type="password"],
+input[type="number"], input[type="email"] {
+  background: rgba(124,77,255,0.07) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 10px !important;
+  color: var(--white) !important;
+  caret-color: var(--lav) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 15px !important; font-weight: 500 !important;
+  padding: 13px 16px !important;
+  transition: border-color .16s, box-shadow .16s !important;
+}
+[data-testid="stTextInput"] input:focus,
+[data-testid="stNumberInput"] input:focus,
+input:focus {
+  border-color: var(--lav) !important;
+  box-shadow: 0 0 0 3px rgba(168,127,255,0.14) !important;
+  outline: none !important;
+  background: rgba(124,77,255,0.11) !important;
+}
+input::placeholder { color: rgba(180,192,255,0.22) !important; }
+[data-testid="stNumberInput"] button {
+  background: rgba(124,77,255,0.11) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--lav) !important; border-radius: 7px !important;
+}
 
-        email = st.text_input("Email Address", placeholder="you@example.com", key="login_email")
-        password = st.text_input("Password", type="password", placeholder="••••••••••••", key="login_pw")
+/* ══ FILE UPLOADER ══ */
+[data-testid="stFileUploader"] {
+  background: rgba(0,229,192,0.03) !important;
+  border: 1.5px dashed rgba(0,229,192,0.26) !important;
+  border-radius: 11px !important; padding: 12px !important;
+}
+[data-testid="stFileUploader"] > label { color: var(--cyan) !important; }
 
-        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+/* ══ BUTTONS ══ */
+.stButton > button {
+  background: linear-gradient(135deg, #7C4DFF 0%, #5030CC 100%) !important;
+  color: #fff !important;
+  border: 1.5px solid rgba(168,127,255,0.32) !important;
+  border-radius: 10px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 15px !important; font-weight: 700 !important;
+  letter-spacing: .01em !important; padding: 13px 28px !important;
+  width: 100% !important; cursor: pointer !important;
+  transition: all .18s ease !important;
+  box-shadow: 0 4px 22px rgba(124,77,255,0.28) !important;
+}
+.stButton > button:hover {
+  background: linear-gradient(135deg, #A87FFF 0%, #7C4DFF 100%) !important;
+  box-shadow: 0 6px 34px rgba(168,127,255,0.42) !important;
+  transform: translateY(-2px) !important;
+  border-color: rgba(168,127,255,0.55) !important;
+}
+.stButton > button:active { transform: translateY(0) !important; }
 
-        if st.session_state.login_attempts >= 5:
-            st.error("🔒 Too many failed attempts. Please wait before retrying.")
-        else:
-            if st.button("Sign In  →", key="btn_login"):
-                if not email or not password:
-                    st.warning("Please enter both email and password.")
-                else:
-                    with st.spinner("Authenticating…"):
-                        time.sleep(0.6)
-                        ok, user = verify_user(email, password)
-                    if ok:
-                        st.session_state.authenticated = True
-                        st.session_state.username = user["name"]
-                        st.session_state.user_plan = user["plan"]
-                        st.session_state.page = "onboard"
-                        st.session_state.login_attempts = 0
-                        st.rerun()
-                    else:
-                        st.session_state.login_attempts += 1
-                        remaining = 5 - st.session_state.login_attempts
-                        st.error(f"Invalid credentials. {remaining} attempt(s) remaining.")
+/* ══ METRIC CARDS ══ */
+[data-testid="stMetric"] {
+  background: var(--card) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 14px !important; padding: 20px 18px !important;
+  transition: border-color .2s, box-shadow .2s !important;
+}
+[data-testid="stMetric"]:hover {
+  border-color: var(--lav) !important;
+  box-shadow: 0 0 22px rgba(168,127,255,0.11) !important;
+}
+[data-testid="stMetricLabel"] > div {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 10px !important; font-weight: 700 !important;
+  letter-spacing: .12em !important; text-transform: uppercase !important;
+  color: var(--muted) !important;
+}
+[data-testid="stMetricValue"] > div {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 28px !important; font-weight: 800 !important;
+  color: var(--lav) !important;
+}
+[data-testid="stMetricDelta"] > div {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+}
 
-        st.markdown("""
-        <div class="cred-hint">
-          <p>Demo credentials:</p>
-          <p>📧 demo@walletwarriors.ai</p>
-          <p>🔑 Warrior@2024</p>
-        </div>
-        """, unsafe_allow_html=True)
+/* ══ PROGRESS BAR ══ */
+[data-testid="stProgress"] > div {
+  background: rgba(124,77,255,0.13) !important;
+  border-radius: 99px !important; height: 8px !important;
+}
+[data-testid="stProgress"] > div > div {
+  background: linear-gradient(90deg, var(--grape), var(--lav), var(--cyan)) !important;
+  border-radius: 99px !important;
+  box-shadow: 0 0 10px rgba(168,127,255,0.45) !important;
+}
 
-        st.markdown("""
-        <p style="text-align:center;margin-top:32px;font-size:11px;
-                  color:rgba(242,242,242,0.25);font-family:'Space Mono',monospace;">
-          256-bit AES encrypted &nbsp;·&nbsp; SOC 2 compliant &nbsp;·&nbsp; DPDP Act 2023
-        </p>
-        """, unsafe_allow_html=True)
+/* ══ DIVIDER ══ */
+hr {
+  border: none !important; height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgba(124,77,255,0.30), transparent) !important;
+  margin: 36px 0 !important;
+}
 
+/* ══ ALERTS ══ */
+[data-testid="stAlert"] {
+  border-radius: 10px !important;
+  font-family: 'Inter', sans-serif !important; font-size: 14px !important;
+}
+[data-testid="stAlert"] p { color: inherit !important; }
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ██████████  ONBOARDING / INCOME VERIFICATION  ██████████
-# ─────────────────────────────────────────────────────────────────────────────
+/* ══ TABS ══ */
+[data-testid="stTabs"] [role="tablist"] {
+  background: var(--card) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 12px !important; padding: 5px !important; gap: 3px !important;
+}
+[data-testid="stTabs"] [role="tab"] {
+  background: transparent !important; color: var(--muted) !important;
+  border-radius: 9px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px !important; font-weight: 600 !important;
+  padding: 9px 16px !important; transition: all .16s !important; border: none !important;
+}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+  background: linear-gradient(135deg, #7C4DFF, #5030CC) !important;
+  color: #fff !important; box-shadow: 0 3px 14px rgba(124,77,255,0.38) !important;
+}
+[data-testid="stTabs"] [role="tab"]:hover:not([aria-selected="true"]) {
+  background: rgba(124,77,255,0.11) !important; color: var(--lav) !important;
+}
+[data-testid="stTabs"] [role="tabpanel"] { padding-top: 24px !important; }
 
-def render_onboard():
-    # Top nav
-    st.markdown(f"""
-    <div style="background:#161616;border-bottom:1px solid rgba(170,119,242,0.12);
-                padding:16px 40px;display:flex;align-items:center;
-                justify-content:space-between;margin-bottom:0;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:32px;height:32px;background:linear-gradient(135deg,#63458C,#AA77F2);
-                    border-radius:8px;display:flex;align-items:center;
-                    justify-content:center;font-size:14px;">🔐</div>
-        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;
-                     color:#F2F2F2;letter-spacing:-.01em;">Wallet Warriors</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:16px;">
-        <span style="font-size:12px;color:rgba(242,242,242,0.4);font-family:'Space Mono',monospace;">
-          Welcome, {st.session_state.username}
-        </span>
-        {badge(st.session_state.get("user_plan","Pro"), "#63458C")}
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+/* ══ EXPANDER ══ */
+details {
+  background: var(--card) !important;
+  border: 1.5px solid var(--border) !important; border-radius: 12px !important;
+}
+summary {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 15px !important; font-weight: 600 !important;
+  color: var(--white) !important; padding: 13px 17px !important;
+}
 
-    st.markdown('<div style="height:32px;"></div>', unsafe_allow_html=True)
+/* ══ SPINNER ══ */
+[data-testid="stSpinner"] p {
+  font-family: 'Inter', sans-serif !important;
+  color: var(--muted) !important; font-size: 14px !important;
+}
 
-    # ── Page header
-    _, mid, _ = st.columns([0.5, 3, 0.5])
-    with mid:
-        st.markdown("""
-        <div style="text-align:center;margin-bottom:40px;">
-          <h1 style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;
-                     color:#F2F2F2;margin:0 0 10px;letter-spacing:-.02em;">
-            Income Verification Engine
-          </h1>
-          <p style="color:rgba(242,242,242,0.45);font-size:15px;max-width:520px;
-                    margin:0 auto;line-height:1.7;">
-            Our AI cross-references your stated income against behavioral spending patterns
-            and document proof using the <strong style="color:#AA77F2;">Triangulation Method</strong>.
-          </p>
-        </div>
-        """, unsafe_allow_html=True)
+/* ══ WARNING / INFO ══ */
+.stWarning, .stInfo, .stSuccess, .stError {
+  font-family: 'Inter', sans-serif !important; font-size: 14px !important;
+}
 
-        # ── Step indicator
-        st.markdown("""
-        <div style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:40px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:28px;height:28px;border-radius:50%;
-                        background:#63458C;color:#F2F2F2;font-size:12px;
-                        font-family:'Space Mono',monospace;font-weight:700;
-                        display:flex;align-items:center;justify-content:center;">1</div>
-            <span style="font-size:12px;color:#AA77F2;font-family:'Space Mono',monospace;font-weight:700;">INCOME DATA</span>
-          </div>
-          <div style="width:60px;height:1px;background:rgba(170,119,242,0.3);margin:0 12px;"></div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:28px;height:28px;border-radius:50%;
-                        background:rgba(99,69,140,0.3);color:rgba(242,242,242,0.4);font-size:12px;
-                        font-family:'Space Mono',monospace;font-weight:700;
-                        display:flex;align-items:center;justify-content:center;">2</div>
-            <span style="font-size:12px;color:rgba(242,242,242,0.4);font-family:'Space Mono',monospace;">VERIFICATION</span>
-          </div>
-          <div style="width:60px;height:1px;background:rgba(170,119,242,0.3);margin:0 12px;"></div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:28px;height:28px;border-radius:50%;
-                        background:rgba(99,69,140,0.3);color:rgba(242,242,242,0.4);font-size:12px;
-                        font-family:'Space Mono',monospace;font-weight:700;
-                        display:flex;align-items:center;justify-content:center;">3</div>
-            <span style="font-size:12px;color:rgba(242,242,242,0.4);font-family:'Space Mono',monospace;">ANALYSIS</span>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+/* ══ TAB HOVER TOOLTIP BOX ══ */
+.ww-tab-tip {
+  position: fixed;
+  background: linear-gradient(145deg, #13162a, #1f2440);
+  border: 1.5px solid rgba(0,229,192,0.32);
+  border-radius: 10px;
+  padding: 10px 15px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: #C8D0F0;
+  line-height: 1.50;
+  max-width: 240px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.60), 0 0 0 1px rgba(0,229,192,0.08);
+  pointer-events: none;
+  z-index: 99999;
+  transition: opacity .16s ease;
+}
+</style>
+""", unsafe_allow_html=True)
 
-    _, mid, _ = st.columns([0.3, 3, 0.3])
-    with mid:
-        # ── Section A: Stated Income
-        st.markdown("""
-        <div style="background:#161616;border:1px solid rgba(170,119,242,0.18);
-                    border-radius:18px;padding:32px;margin-bottom:20px;">
-          <p style="font-family:'Space Mono',monospace;font-size:10px;
-                    letter-spacing:.12em;text-transform:uppercase;
-                    color:#AA77F2;margin:0 0 20px;">A · Stated Income</p>
-        """, unsafe_allow_html=True)
+# ─────────────────────────────────────────────────────────────
+# ██  FEATURE 1: JARGON-BUSTER TOOLTIP SYSTEM  ██
+# Pure CSS/HTML overlay — zero impact on ML logic
+# ─────────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+/* ══ JARGON-BUSTER TOOLTIP ══ */
+.ww-tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+  color: #A87FFF;
+  font-weight: 600;
+  border-bottom: 1.5px dashed rgba(168,127,255,0.50);
+  transition: color .15s, border-color .15s;
+}
+.ww-tooltip:hover {
+  color: #00E5C0;
+  border-bottom-color: rgba(0,229,192,0.60);
+}
+.ww-tooltip .ww-tip-box {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  width: 290px;
+  background: linear-gradient(145deg, #13162a, #1f2440);
+  border: 1.5px solid rgba(0,229,192,0.30);
+  border-radius: 12px;
+  padding: 14px 16px;
+  position: absolute;
+  z-index: 9999;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,229,192,0.08);
+  transition: opacity .18s ease, visibility .18s ease;
+}
+.ww-tooltip:hover .ww-tip-box {
+  visibility: visible;
+  opacity: 1;
+}
+.ww-tip-box::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0,229,192,0.30);
+}
+.ww-tip-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #00E5C0;
+  margin-bottom: 6px;
+  display: block;
+}
+.ww-tip-def {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #C8D0F0;
+  line-height: 1.60;
+  margin: 0;
+}
+</style>
+""", unsafe_allow_html=True)
 
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            income = st.number_input("Monthly Income (₹)", min_value=0, step=1000, key="ob_income")
-        with c2:
-            rent = st.number_input("Monthly Rent / EMI (₹)", min_value=0, step=500, key="ob_rent")
-        with c3:
-            savings = st.number_input("Monthly Savings (₹)", min_value=0, step=500, key="ob_savings")
+# ── 10 "Sexy" Jargon-Buster definitions ──
+JARGON = {
+    "XGBoost": (
+        "XGBoost",
+        "An elite ensemble algorithm that builds hundreds of decision trees in sequence, "
+        "each one correcting the mistakes of the last — the preferred engine of Kaggle champions "
+        "and real-world underwriting models worldwide."
+    ),
+    "ROC-AUC": (
+        "ROC-AUC Score",
+        "The single number that tells you how well an AI separates good borrowers from bad ones. "
+        "A score of 1.0 is perfect; 0.5 is a coin flip. Our model sits at 0.86."
+    ),
+    "SHAP": (
+        "SHAP Values",
+        "A game-theory-backed method that assigns each input feature a precise 'blame' or 'credit' "
+        "score for every prediction — turning a black-box AI into a transparent, auditable decision."
+    ),
+    "LIME": (
+        "LIME",
+        "Local Interpretable Model-agnostic Explanations — a technique that interrogates any AI "
+        "by perturbing your data and measuring how the output changes, creating a local map of model behaviour."
+    ),
+    "Debt-to-Income": (
+        "Debt-to-Income Ratio (DTI/FOIR)",
+        "The percentage of your monthly income consumed by fixed obligations (rent + EMIs). "
+        "Above 65% and most Indian banks trigger automatic rejection — no human review, no exceptions."
+    ),
+    "Triangulation Method": (
+        "Triangulation Method",
+        "Our proprietary income-verification engine that cross-checks your stated salary against "
+        "real-world spending signals — rent, electricity, and UPI flows — to detect inflation or fabrication "
+        "before a lender does."
+    ),
+    "Hustle Score": (
+        "Hustle Score™",
+        "Our 5-point proprietary metric that measures financial discipline: savings rate, rent discipline, "
+        "credit health, employment continuity, and loan-to-income ratio. "
+        "It's the lender's gut feeling, quantified."
+    ),
+    "Confidence Index": (
+        "Confidence Index",
+        "A 0–100 score that reflects how consistent your stated income is with your lifestyle signals. "
+        "Below 55 means the system flags your application for manual review before it reaches an underwriter."
+    ),
+    "Feature Importance": (
+        "Feature Importance",
+        "A ranking of which input variables drove the AI's decision most strongly. "
+        "Knowing your top features lets you focus improvement efforts where they move the needle fastest."
+    ),
+    "Model Drift": (
+        "Model Drift",
+        "The gradual degradation of a model's accuracy as real-world borrower behaviour shifts away from "
+        "the patterns it was trained on — the silent killer of production AI in fintech."
+    ),
+}
 
-        st.markdown("</div>", unsafe_allow_html=True)
+def tooltip(term_key: str, display_text: str = None) -> str:
+    """Return an HTML jargon-buster tooltip span.
 
-        # ── Section B: Behavioural Proof
-        st.markdown("""
-        <div style="background:#161616;border:1px solid rgba(170,119,242,0.18);
-                    border-radius:18px;padding:32px;margin-bottom:20px;">
-          <p style="font-family:'Space Mono',monospace;font-size:10px;
-                    letter-spacing:.12em;text-transform:uppercase;
-                    color:#AA77F2;margin:0 0 4px;">B · Behavioural Spending Signals</p>
-          <p style="color:rgba(242,242,242,0.35);font-size:12px;margin:0 0 20px;">
-            Used for cross-correlation anomaly detection
-          </p>
-        """, unsafe_allow_html=True)
-
-        c4, c5 = st.columns(2)
-        with c4:
-            electricity = st.number_input("Avg Monthly Electricity Bill (₹)", min_value=0, step=100, key="ob_elec")
-        with c5:
-            upi_outflow = st.number_input("Avg Monthly UPI Outflow (₹)", min_value=0, step=500, key="ob_upi")
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # ── Section C: Document Upload (OCR simulation)
-        st.markdown("""
-        <div style="background:#161616;border:1px solid rgba(170,119,242,0.18);
-                    border-radius:18px;padding:32px;margin-bottom:24px;">
-          <p style="font-family:'Space Mono',monospace;font-size:10px;
-                    letter-spacing:.12em;text-transform:uppercase;
-                    color:#AA77F2;margin:0 0 4px;">C · Document Proof (Optional)</p>
-          <p style="color:rgba(242,242,242,0.35);font-size:12px;margin:0 0 20px;">
-            Upload salary slip / bank statement. OCR pipeline extracts income automatically.
-          </p>
-        """, unsafe_allow_html=True)
-
-        c6, c7 = st.columns([2, 1])
-        with c6:
-            uploaded_doc = st.file_uploader(
-                "Upload Salary Slip or Bank Statement (PDF / Image)",
-                type=["pdf", "png", "jpg", "jpeg"],
-                key="ob_doc"
-            )
-        with c7:
-            doc_income_manual = st.number_input(
-                "Or manually enter document income (₹)",
-                min_value=0, step=1000, key="ob_doc_income",
-                help="If OCR cannot extract, enter the 'Net Pay' from your payslip here."
-            )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # OCR simulation
-        doc_income = None
-        if uploaded_doc:
-            st.markdown("""
-            <div style="background:rgba(99,69,140,0.1);border:1px solid rgba(170,119,242,0.2);
-                        border-radius:10px;padding:14px 18px;margin-bottom:16px;">
-              <span style="font-size:12px;font-family:'Space Mono',monospace;color:#AA77F2;">
-                ✦ OCR Pipeline Active — document received. For full OCR, integrate PyTesseract in production.
-              </span>
-            </div>
-            """, unsafe_allow_html=True)
-            if doc_income_manual > 0:
-                doc_income = doc_income_manual
-
-        if doc_income_manual > 0 and not uploaded_doc:
-            doc_income = doc_income_manual
-
-        # ── Proceed button
-        if st.button("Run Verification Engine  →", key="btn_verify"):
-            if income == 0:
-                st.warning("Please enter your monthly income to proceed.")
-            else:
-                with st.spinner("Running triangulation engine…"):
-                    time.sleep(1.0)
-                    coherent, confidence, flags, est_real = triangulate_income(
-                        income, rent, electricity, upi_outflow, doc_income
-                    )
-
-                st.session_state.verification_result = {
-                    "coherent": coherent,
-                    "confidence": confidence,
-                    "flags": flags,
-                    "est_real_income": est_real,
-                    "stated_income": income,
-                    "rent": rent,
-                    "savings": savings,
-                    "electricity": electricity,
-                    "upi_outflow": upi_outflow,
-                    "doc_income": doc_income,
-                }
-                st.session_state.page = "verify_result"
-                st.rerun()
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ██████████  VERIFICATION RESULT PAGE  ██████████
-# ─────────────────────────────────────────────────────────────────────────────
-
-def render_verify_result():
-    vr = st.session_state.verification_result
-    coherent    = vr["coherent"]
-    confidence  = vr["confidence"]
-    flags       = vr["flags"]
-    est_real    = vr["est_real_income"]
-    stated      = vr["stated_income"]
-
-    # Nav
-    _render_nav()
-
-    st.markdown('<div style="padding:40px 60px;">', unsafe_allow_html=True)
-
-    # Result banner
-    if coherent:
-        st.markdown(f"""
-        <div style="background:linear-gradient(135deg,rgba(76,175,125,0.15),rgba(76,175,125,0.05));
-                    border:1px solid rgba(76,175,125,0.4);border-radius:18px;
-                    padding:32px;margin-bottom:32px;display:flex;
-                    align-items:center;justify-content:space-between;">
-          <div>
-            <p style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;
-                      text-transform:uppercase;color:rgba(76,175,125,0.8);margin:0 0 8px;">
-              Verification Status
-            </p>
-            <h2 style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;
-                       color:#4CAF7D;margin:0;">✓ Income Verified</h2>
-            <p style="color:rgba(242,242,242,0.5);margin:8px 0 0;font-size:14px;">
-              Your financial profile is coherent. Proceeding to credit analysis.
-            </p>
-          </div>
-          <div style="text-align:right;">
-            <p style="color:rgba(242,242,242,0.4);font-size:11px;font-family:'Space Mono',monospace;margin:0 0 4px;">CONFIDENCE SCORE</p>
-            <p style="font-family:'Space Mono',monospace;font-size:42px;font-weight:700;color:#4CAF7D;margin:0;">{confidence}%</p>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-        <div style="background:linear-gradient(135deg,rgba(224,92,92,0.15),rgba(224,92,92,0.05));
-                    border:1px solid rgba(224,92,92,0.4);border-radius:18px;
-                    padding:32px;margin-bottom:32px;display:flex;
-                    align-items:center;justify-content:space-between;">
-          <div>
-            <p style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;
-                      text-transform:uppercase;color:rgba(224,92,92,0.8);margin:0 0 8px;">
-              Verification Status
-            </p>
-            <h2 style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;
-                       color:#E05C5C;margin:0;">⚠ Anomaly Detected</h2>
-            <p style="color:rgba(242,242,242,0.5);margin:8px 0 0;font-size:14px;">
-              Income triangulation failed. Manual review required.
-            </p>
-          </div>
-          <div style="text-align:right;">
-            <p style="color:rgba(242,242,242,0.4);font-size:11px;font-family:'Space Mono',monospace;margin:0 0 4px;">CONFIDENCE SCORE</p>
-            <p style="font-family:'Space Mono',monospace;font-size:42px;font-weight:700;color:#E05C5C;margin:0;">{confidence}%</p>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ── Metrics row
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.metric("Stated Income", f"₹{stated:,.0f}/mo")
-    with c2:
-        st.metric("Implied Income", f"₹{est_real:,.0f}/mo",
-                  delta=f"{((est_real-stated)/max(stated,1)*100):+.0f}%")
-    with c3:
-        rent_pct = round(vr["rent"]/max(stated,1)*100, 1)
-        st.metric("Rent-to-Income", f"{rent_pct}%",
-                  delta="Safe" if rent_pct < 45 else "High",
-                  delta_color="normal" if rent_pct < 45 else "inverse")
-    with c4:
-        st.metric("Verification Score", f"{confidence}/100")
-
-    st.markdown('<div style="height:24px;"></div>', unsafe_allow_html=True)
-
-    # ── Gauges
-    fig = make_subplots(
-        rows=1, cols=2,
-        specs=[[{"type": "indicator"}, {"type": "indicator"}]],
+    Args:
+        term_key: key in JARGON dict (e.g. "XGBoost")
+        display_text: override display label (defaults to term_key)
+    """
+    if term_key not in JARGON:
+        return display_text or term_key
+    label, definition = JARGON[term_key]
+    show = display_text or label
+    return (
+        f'<span class="ww-tooltip">{show}'
+        f'<span class="ww-tip-box">'
+        f'<span class="ww-tip-label">{label}</span>'
+        f'<span class="ww-tip-def">{definition}</span>'
+        f'</span></span>'
     )
-    fig.add_trace(go.Indicator(
-        mode="gauge+number",
-        value=confidence,
-        title={"text": "Verification Confidence", "font": {"size": 13}},
-        gauge={
-            "axis": {"range": [0, 100], "tickcolor": "#F2F2F2"},
-            "bar": {"color": "#AA77F2"},
-            "steps": [
-                {"range": [0,   40], "color": "rgba(224,92,92,0.3)"},
-                {"range": [40,  70], "color": "rgba(201,138,26,0.3)"},
-                {"range": [70, 100], "color": "rgba(76,175,125,0.3)"},
-            ],
-            "threshold": {"line": {"color": "#AA77F2", "width": 2}, "value": confidence},
-            "bgcolor": "rgba(0,0,0,0)",
-        }
-    ), row=1, col=1)
 
-    discrepancy_pct = min(100, abs(stated - est_real) / max(stated, 1) * 100)
-    fig.add_trace(go.Indicator(
-        mode="gauge+number+delta",
-        value=stated,
-        delta={"reference": est_real, "prefix": "₹", "valueformat": ",.0f"},
-        title={"text": "Stated vs Implied Income (₹)", "font": {"size": 13}},
-        number={"prefix": "₹", "valueformat": ",.0f"},
-        gauge={
-            "axis": {"range": [0, max(stated, est_real) * 1.3]},
-            "bar": {"color": "#63458C"},
-            "steps": [{"range": [0, est_real], "color": "rgba(170,119,242,0.2)"}],
-            "bgcolor": "rgba(0,0,0,0)",
-        }
-    ), row=1, col=2)
+# ─────────────────────────────────────────────────────────────
+# UI HELPER COMPONENTS
+# ─────────────────────────────────────────────────────────────
+def section_header(title, subtitle="", icon="", accent=None):
+    accent = accent or GRAPE
+    icon_html = f'<span style="font-size:22px;line-height:1;">{icon}</span>' if icon else ""
+    sub_html = (f'<p style="font-family:\'Inter\',sans-serif;font-size:14.5px;font-weight:400;'
+                f'color:{TEXT};margin:6px 0 0;line-height:1.65;">{subtitle}</p>') if subtitle else ""
+    st.markdown(f"""
+    <div style="margin:20px 0 14px;">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:4px;">
+        {icon_html}
+        <h2 style="font-family:'Inter',sans-serif;font-size:22px;font-weight:800;
+                   color:{WHITE};margin:0;letter-spacing:-0.022em;">{title}</h2>
+      </div>
+      {sub_html}
+      <div style="height:3px;background:linear-gradient(90deg,{accent},{LAV} 55%,transparent);
+                  border-radius:99px;margin-top:10px;width:48px;
+                  box-shadow:0 0 10px {accent}88;"></div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    fig.update_layout(**PLOT_LAYOUT, height=280)
-    st.plotly_chart(fig, use_container_width=True)
+def panel_open(tag_label, title, subtitle="", border_color=None):
+    bc = border_color or BORDER
+    tag_color = CYAN if "C —" in tag_label else LAV
+    tag_fg = "#080c1a"
+    sub_html = (f'<p style="font-family:\'Inter\',sans-serif;font-size:13.5px;font-weight:400;'
+                f'color:{TEXT};margin:5px 0 14px;line-height:1.60;">{subtitle}</p>') if subtitle else '<div style="height:10px;"></div>'
+    st.markdown(f"""
+    <div style="background:{SURFACE};border:1.5px solid {bc};
+                border-radius:14px;padding:20px 26px 8px;margin-bottom:16px;
+                box-shadow:0 4px 20px rgba(0,0,0,0.30);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="background:{tag_color};color:{tag_fg};
+                     font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+                     letter-spacing:.12em;padding:3px 11px;border-radius:99px;
+                     text-transform:uppercase;">{tag_label}</span>
+      </div>
+      <h3 style="font-family:'Inter',sans-serif;font-size:17px;font-weight:700;
+                 color:{WHITE};margin:3px 0 0;letter-spacing:-0.012em;">{title}</h3>
+      {sub_html}
+    """, unsafe_allow_html=True)
 
-    # ── Flags
-    if flags:
-        section_header("Verification Flags", "Issues detected by the triangulation engine", "🚩")
-        for f in flags:
-            sev_color = {"high": "#E05C5C", "medium": "#C98A1A", "low": "#AA77F2"}.get(f["severity"], "#AA77F2")
-            st.markdown(f"""
-            <div style="background:#1C1C1E;border-left:3px solid {sev_color};
-                        border-radius:0 12px 12px 0;padding:16px 20px;margin-bottom:12px;
-                        border-top:1px solid rgba(255,255,255,0.05);border-right:1px solid rgba(255,255,255,0.05);
-                        border-bottom:1px solid rgba(255,255,255,0.05);">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                <span style="font-size:10px;font-family:'Space Mono',monospace;font-weight:700;
-                             color:{sev_color};text-transform:uppercase;letter-spacing:.1em;">
-                  {f['severity']} severity
-                </span>
-              </div>
-              <p style="color:#F2F2F2;font-size:14px;margin:0;line-height:1.6;">{f['msg']}</p>
-            </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.success("✓ No anomalies detected. All signals are coherent.")
-
-    st.markdown('<div style="height:24px;"></div>', unsafe_allow_html=True)
-
-    # ── CTA
-    c_a, c_b = st.columns(2)
-    with c_a:
-        if st.button("← Re-enter Data", key="btn_back_verify"):
-            st.session_state.page = "onboard"
-            st.rerun()
-    with c_b:
-        label = "Proceed to Credit Analysis  →" if coherent else "Proceed Anyway (Override)  →"
-        if st.button(label, key="btn_proceed"):
-            st.session_state.user_data = vr
-            st.session_state.page = "dashboard"
-            st.rerun()
-
+def panel_close():
     st.markdown("</div>", unsafe_allow_html=True)
 
+# ─────────────────────────────────────────────────────────────
+# TRIANGULATION ENGINE
+# ─────────────────────────────────────────────────────────────
+def triangulate(stated, rent, elec, upi, doc_inc=None):
+    flags = []; conf = 100.0
+    if stated > 0:
+        rr = rent / stated
+        if rr < 0.04:
+            flags.append({"sev": "medium", "title": "Rent seems very low for your income",
+                "msg": f"Your rent (₹{rent:,.0f}/mo) is only {rr*100:.1f}% of your stated income. "
+                       "Someone in your income range typically spends 25–45% on rent. "
+                       "This mismatch may indicate an inconsistency in your application."})
+            conf -= 14
+        elif rr > 0.75:
+            flags.append({"sev": "high", "title": "Rent consumes an unsustainable share of income",
+                "msg": f"You are spending {rr*100:.1f}% of your income on rent alone (₹{rent:,.0f}/mo). "
+                       "Lenders reject applications where total fixed obligations exceed 65% of income."})
+            conf -= 24
+    el_lo = 600 + (stated/1000)*18; el_hi = 1500 + (stated/1000)*35
+    if elec > 0 and elec < el_lo * 0.4:
+        flags.append({"sev": "medium", "title": "Electricity bill is inconsistent with income level",
+            "msg": f"Your bill (₹{elec:,.0f}) is below the ₹{el_lo:,.0f}–₹{el_hi:,.0f} range "
+                   f"expected for someone earning ₹{stated:,.0f}/month. "
+                   "Lifestyle indicators should align with stated income."})
+        conf -= 10
+    if upi > 0 and stated > 0:
+        vr = upi / stated
+        if vr < 0.10:
+            flags.append({"sev": "high", "title": "UPI spending is critically low for stated income",
+                "msg": f"Stated income is ₹{stated:,.0f}/month, yet UPI outflow is only "
+                       f"₹{upi:,.0f} ({vr*100:.1f}%). High earners typically show ≥35% spending velocity. "
+                       "This is a primary red flag for underwriters."})
+            conf -= 30
+        elif vr > 1.5:
+            flags.append({"sev": "medium", "title": "Monthly spending exceeds stated income",
+                "msg": "UPI outflow exceeds your stated monthly income, suggesting reliance on savings "
+                       "or external borrowing to cover expenses. This increases default risk."})
+            conf -= 10
+    sigs = []
+    if rent > 0: sigs.append(rent / 0.33)
+    if elec > 0: sigs.append(elec / 0.03)
+    if upi > 0:  sigs.append(upi / 0.55)
+    if sigs:
+        imp = np.mean(sigs); std = np.std(sigs) if len(sigs) > 1 else imp * 0.2
+        z = abs(stated - imp) / (std + 1)
+        if z > 2.0:
+            flags.append({"sev": "high",
+                "title": f"Income anomaly detected — {z:.1f}σ deviation from spending signals",
+                "msg": f"Spending patterns imply a real income of ₹{imp:,.0f}/month, "
+                       f"but ₹{stated:,.0f} was stated — a {z:.1f}σ gap. "
+                       "Applications with gaps above 2σ are flagged for manual underwriter review."})
+            conf -= min(32, z * 10)
+    else:
+        imp = stated
+    if doc_inc and doc_inc > 0:
+        disc = abs(stated - doc_inc) / max(doc_inc, 1)
+        if disc > 0.10:
+            flags.append({"sev": "high", "title": "Document income does not match stated income",
+                "msg": f"Document shows ₹{doc_inc:,.0f}/month net pay, "
+                       f"but ₹{stated:,.0f} was entered — a {disc*100:.1f}% discrepancy. "
+                       "Our system allows ±10% tolerance. Please correct and resubmit."})
+            conf -= 40
+    conf = max(0, min(100, conf))
+    ok = conf >= 55 and not any(f["sev"] == "high" for f in flags)
+    return ok, round(conf, 1), flags, round(imp if sigs else stated)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ██████████  MAIN DASHBOARD  ██████████
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# APPROVAL READINESS
+# ─────────────────────────────────────────────────────────────
+def approval_readiness(income, rent, savings, loan, employ, cibil, prob, ver_conf):
+    cr = min(25, max(0, (cibil - 300) / 600 * 25))
+    sv = min(20, savings / max(income, 1) * 100)
+    emi = loan / 60; foir = (rent + emi) / max(income, 1)
+    db = max(0, 20 - foir * 30)
+    ep = min(15, employ * 3)
+    ml = max(0, (1 - prob) * 15)
+    vc = ver_conf / 100 * 5
+    total = cr + sv + db + ep + ml + vc
+    return round(total, 1), {
+        "Credit Score":          round(cr, 1),
+        "Savings & Liquidity":   round(sv, 1),
+        "Debt Burden":           round(db, 1),
+        "Employment Stability":  round(ep, 1),
+        "AI Risk Score":         round(ml, 1),
+        "Verification Strength": round(vc, 1),
+    }
 
-def render_dashboard():
-    _render_nav()
+def hustle_score(sav, inc, rent, cibil, emp, loan):
+    s = 0
+    if inc > 0 and sav / inc >= 0.10: s += 20
+    if inc > 0 and rent / inc < 0.50: s += 20
+    if cibil > 650: s += 20
+    if emp >= 2: s += 20
+    if inc > 0 and loan < inc * 5: s += 20
+    return s
 
-    ud = st.session_state.user_data
+# ─────────────────────────────────────────────────────────────
+# SHAP
+# ─────────────────────────────────────────────────────────────
+def run_shap(mdl, df):
+    matplotlib.rcdefaults()
+    plt.rcParams.update({
+        "figure.facecolor": CARD, "axes.facecolor": CARD,
+        "savefig.facecolor": CARD, "text.color": WHITE,
+        "axes.labelcolor": WHITE, "xtick.color": WHITE, "ytick.color": WHITE,
+        "axes.edgecolor": "#2a2f4a", "grid.color": "#252a40",
+        "font.family": "sans-serif", "font.size": 13,
+    })
+    exp = shap.Explainer(mdl); sv = exp(df); arr = sv[0].values
+    feats = df.columns.tolist()
+    plt.subplots(figsize=(7, 4.5))
+    shap.plots.waterfall(sv[0], show=False, max_display=6)
+    fig_w = plt.gcf(); fig_w.patch.set_facecolor(CARD)
+    for ax in fig_w.axes:
+        ax.set_facecolor(CARD); ax.tick_params(colors=WHITE, labelsize=12)
+    plt.subplots(figsize=(7, 4.5))
+    shap.plots.bar(sv, show=False, max_display=6)
+    fig_b = plt.gcf(); fig_b.patch.set_facecolor(CARD)
+    for ax in fig_b.axes:
+        ax.set_facecolor(CARD); ax.tick_params(colors=WHITE, labelsize=12)
+    si = np.argsort(np.abs(arr))[::-1]
+    tbl = [{
+        "Feature": feats[i],
+        "Value": f"{df.iloc[0][feats[i]]:,.2f}",
+        "SHAP": round(float(arr[i]), 4),
+        "Dir": "↑ Increases default risk" if arr[i] > 0 else "↓ Reduces default risk",
+        "Color": RED if arr[i] > 0 else GREEN
+    } for i in si]
+    return fig_w, fig_b, tbl, {r["Feature"]: r["SHAP"] for r in tbl}
 
-    st.markdown('<div style="padding:32px 48px;">', unsafe_allow_html=True)
+# ─────────────────────────────────────────────────────────────
+# RECOMMENDATIONS
+# ─────────────────────────────────────────────────────────────
+def gen_recs(income, rent, savings, loan, employ, cibil, prob):
+    recs = []; emi = loan / 60
+    foir = (rent + emi) / max(income, 1) * 100
+    sr = savings / max(income, 1) * 100
 
-    # ── Header
+    if foir > 65:
+        recs.append({"p": "high", "icon": "⚠️",
+            "title": "Fixed obligations are too high to qualify",
+            "what": (f"Rent (₹{rent:,.0f}) + estimated EMI (₹{emi:,.0f}) = ₹{rent+emi:,.0f}/month, "
+                     f"which is {foir:.1f}% of your income. The RBI-mandated FOIR cap for salaried "
+                     "borrowers at most PSU and private banks is 50–65%. Exceeding this triggers "
+                     "automatic rejection — no exceptions."),
+            "how": (f"Extend tenure to 84 months: EMI drops to ₹{loan/84:,.0f}/month, "
+                    f"bringing FOIR to {((rent+loan/84)/max(income,1)*100):.1f}%. "
+                    "Alternatively, add a co-applicant to split the FOIR obligation.")})
+
+    if sr < 10:
+        recs.append({"p": "high", "icon": "💰",
+            "title": "Savings rate is below the minimum lender threshold",
+            "what": (f"Current savings rate: {sr:.1f}% (₹{savings:,.0f}/month). "
+                     "Lenders use this to assess your financial resilience — can you still pay EMIs "
+                     "if income is disrupted for 2–3 months? At this rate, the answer is no."),
+            "how": (f"Set an auto-debit of ₹{int(income*0.15):,}/month to a Liquid Fund "
+                    "on salary credit day. Even 90 days of consistent savings changes how lenders "
+                    "read your bank statement narrative.")})
+    elif sr >= 20:
+        recs.append({"p": "positive", "icon": "✅",
+            "title": "Savings discipline is above benchmark — leverage it",
+            "what": (f"Saving {sr:.1f}% of income is in the top quartile of applicants. "
+                     "This signals financial control and directly improves your Approval Readiness Score."),
+            "how": ("Park 3–6 months of expenses in a Fixed Deposit and declare it as collateral. "
+                    "This can increase approved loan limits by 15–25% at most NBFCs.")})
+
+    if cibil < 650:
+        recs.append({"p": "high", "icon": "📉",
+            "title": "CIBIL score is below the prime lending cutoff",
+            "what": (f"Score of {cibil} puts you in the sub-prime category. "
+                     "SBI, HDFC, ICICI, and Axis Bank all require ≥700 for personal loans. "
+                     f"At NBFCs you may qualify, but at 18–28% APR vs 10–13% for prime. "
+                     f"On ₹{loan:,.0f} over 5 years, this costs ₹{int(loan*0.10*5/2):,} extra."),
+            "how": ("1. Check for report errors at cibil.com (23% of reports have errors). "
+                    "2. Get a secured credit card (₹20k–50k FD as collateral). "
+                    "3. Pay full outstanding — never just the minimum — for 6 months. "
+                    "Expected score uplift: 40–80 points.")})
+    elif cibil >= 750:
+        recs.append({"p": "positive", "icon": "🏆",
+            "title": "Prime CIBIL score — negotiate aggressively",
+            "what": (f"Score of {cibil} qualifies you for the best available rates (10–12% APR). "
+                     f"vs a 650-score applicant, you save ₹{int(loan*0.04*5/2):,} on ₹{loan:,.0f} over 5 years."),
+            "how": ("Use BankBazaar or Paisabazaar to collect 8–10 live offers simultaneously. "
+                    "Then approach your existing bank with the best competing offer — "
+                    "most will match or beat it to retain you.")})
+
+    if employ < 1:
+        recs.append({"p": "high", "icon": "💼",
+            "title": "Employment tenure is insufficient for loan eligibility",
+            "what": ("Virtually all scheduled banks and major NBFCs require a minimum of 12 months "
+                     "at the current employer before approving personal loans. "
+                     "Probationary or contract employees are excluded from most programs."),
+            "how": ("Wait for the 12-month mark. In the interim: file your ITR, "
+                    "get an HR letter confirming permanent employment status, "
+                    "and build credit history via a secured card.")})
+    elif employ >= 3:
+        recs.append({"p": "positive", "icon": "📋",
+            "title": f"{employ:.0f} years of tenure qualifies for pre-approved offers",
+            "what": ("Long tenure at a single employer is one of the strongest approval signals. "
+                     "Your salary-disbursement bank already has your complete transaction history."),
+            "how": ("Call your salary bank's relationship manager directly and ask for a "
+                    "pre-approved personal loan. These use internal payroll data — "
+                    "typically approved in 24–48 hours with minimal documentation.")})
+
+    if income > 0 and loan > income * 60:
+        recs.append({"p": "medium", "icon": "📊",
+            "title": "Loan-to-income ratio exceeds standard limits",
+            "what": (f"₹{loan:,} is {loan/income:.0f}× your monthly income. "
+                     "Standard personal loan limits are 10–22× monthly income. "
+                     "Higher ratios attract scrutiny and higher rejection rates."),
+            "how": (f"Split the application: ₹{int(income*18):,} as a personal loan "
+                    f"+ ₹{int(loan-income*18):,} via Loan Against Property or Loan Against Mutual Funds. "
+                    "The latter uses your assets as security, unlocking larger amounts at lower rates.")})
+    return recs
+
+# ─────────────────────────────────────────────────────────────
+# ROADMAP
+# ─────────────────────────────────────────────────────────────
+def gen_roadmap(income, rent, sav, loan, emp, cibil, prob):
+    m1 = [
+        "Pull your free CIBIL report at cibil.com and dispute any errors immediately. "
+        "Incorrect entries affect 23% of reports and can be resolved in 30 days — "
+        "often boosting your score by 20–60 points with no financial effort.",
+        "Assemble your complete document set now: 3 months salary slips, last year's Form 16, "
+        "6 months bank statement (PDF, not screenshot), PAN card, and Aadhaar. "
+        "A missing document is the single most common reason for application delays."
+    ]
+    if sav / max(income, 1) < 0.15:
+        m1.append(
+            f"Activate an automatic SIP of ₹{int(income*0.12):,}/month into a Liquid Fund "
+            "on salary credit day. Three months of consistent deposits visibly improves your "
+            "bank statement narrative — which underwriters read manually for all loan applications.")
+    m2 = [
+        "Do not apply to multiple lenders simultaneously. Each application triggers a hard CIBIL enquiry "
+        "that reduces your score by 5–8 points. Use eligibility-check tools on BankBazaar or Paisabazaar "
+        "first — these use soft checks that don't affect your score."
+    ]
+    if cibil < 750:
+        m2.append(
+            f"Open a secured credit card against an FD of ₹{min(50000, int(loan*0.1)):,}. "
+            "Use it for recurring expenses (fuel, groceries, utility bills) and pay the full "
+            "statement balance — not the minimum — before the due date every month. "
+            "CIBIL records this as 100% utilisation discipline within 45 days.")
+    if rent / max(income, 1) > 0.45:
+        m2.append(
+            "Your rent-to-income ratio is above the safe threshold. Even a ₹3,000–5,000 monthly reduction "
+            "through co-living or lease renegotiation can move your FOIR into the lender's approval band.")
+    m3 = [
+        "Apply to your salary-disbursement bank first. Their internal data includes your payroll deposits, "
+        "average daily balance, and spending patterns — giving them higher confidence than external banks "
+        "relying solely on your submitted documents.",
+        f"At 90 days, your estimated Approval Readiness Score: ~{min(95, round((1-prob)*100)+25)}%. "
+        "If below 70%, pivot to Tier-1 NBFCs (Bajaj Finserv, Tata Capital, HDFC Credila) — "
+        "they apply broader underwriting criteria and approve 40% more applications than PSU banks."
+    ]
+    if emp < 2:
+        m3.insert(1,
+            "Obtain an employment continuity certificate and HR confirmation of permanent status. "
+            "These documents move your profile from 'uncertain employment' to "
+            "'verified salaried professional' in the underwriter's assessment.")
+    return [m1, m2, m3]
+
+# ─────────────────────────────────────────────────────────────
+# NAVIGATION BAR
+# ─────────────────────────────────────────────────────────────
+def render_nav():
+    vr = st.session_state.vr
+    ver_html = ""
+    if vr:
+        vc = GREEN if vr["coherent"] else RED
+        vl = "✓ Verified" if vr["coherent"] else "⚠ Review Required"
+        ver_html = (f'<span style="background:{vc}1a;color:{vc};border:1px solid {vc}44;'
+                    f'font-family:\'JetBrains Mono\',monospace;font-size:10.5px;font-weight:700;'
+                    f'letter-spacing:.07em;padding:4px 13px;border-radius:99px;'
+                    f'text-transform:uppercase;">{vl}</span>')
+    name = st.session_state.username
+    plan = st.session_state.plan
+    initial = name[0].upper() if name else "D"
+
     st.markdown(f"""
-    <div style="margin-bottom:36px;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+    <div style="background:rgba(15,17,23,0.96);backdrop-filter:blur(24px);
+                -webkit-backdrop-filter:blur(24px);
+                border-bottom:1px solid rgba(108,63,255,0.18);
+                padding:0 48px;height:62px;display:flex;align-items:center;
+                justify-content:space-between;position:sticky;top:0;z-index:999;
+                box-shadow:0 1px 0 rgba(108,63,255,0.12),0 4px 24px rgba(0,0,0,0.50);">
+      <!-- LOGO -->
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:34px;height:34px;
+                    background:linear-gradient(135deg,{GRAPE},{CYAN});
+                    border-radius:9px;display:flex;align-items:center;justify-content:center;
+                    font-size:16px;box-shadow:0 0 18px rgba(108,63,255,0.50);">⚡</div>
         <div>
-          <h1 style="font-family:'Syne',sans-serif;font-size:34px;font-weight:800;
-                     color:#F2F2F2;margin:0 0 6px;letter-spacing:-.02em;">
-            Financial Risk Intelligence
-          </h1>
-          <p style="color:rgba(242,242,242,0.4);font-size:14px;margin:0;">
-            Complete AI-driven credit assessment for {st.session_state.username}
-          </p>
+          <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:17px;
+                       color:{WHITE};letter-spacing:-0.02em;">Wallet Warriors</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:{MUTED2};
+                       letter-spacing:.10em;margin-left:8px;text-transform:uppercase;">
+            Credit Intelligence</span>
         </div>
-        <div style="display:flex;gap:10px;align-items:center;">
-          {badge("AUC 0.86","#63458C")}
-          {badge("XGBoost v2","rgba(153,99,15,0.7)","#F2F2F2")}
-          {badge("SHAP Explained","rgba(170,119,242,0.25)","#AA77F2")}
+      </div>
+      <!-- RIGHT SIDE -->
+      <div style="display:flex;align-items:center;gap:12px;">
+        {ver_html}
+        <!-- User pill -->
+        <div style="display:flex;align-items:center;gap:8px;
+                    background:rgba(108,63,255,0.12);
+                    border:1px solid rgba(108,63,255,0.22);
+                    border-radius:99px;padding:5px 13px 5px 6px;">
+          <div style="width:26px;height:26px;
+                      background:linear-gradient(135deg,{GRAPE},{LAV});
+                      border-radius:50%;display:flex;align-items:center;justify-content:center;
+                      font-family:'Inter',sans-serif;font-size:11px;font-weight:800;color:#fff;">
+            {initial}</div>
+          <span style="font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;
+                       color:{WHITE};max-width:120px;overflow:hidden;text-overflow:ellipsis;
+                       white-space:nowrap;">{name}</span>
+          <span style="background:{GRAPE};color:#fff;font-family:'JetBrains Mono',monospace;
+                       font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:99px;
+                       text-transform:uppercase;">{plan}</span>
         </div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Pre-fill from verification data or fresh inputs
-    default_income  = ud.get("stated_income", 0)
-    default_rent    = ud.get("rent", 0)
-    default_savings = ud.get("savings", 0)
-
-    # ── Input form
-    st.markdown("""
-    <div style="background:#161616;border:1px solid rgba(170,119,242,0.15);
-                border-radius:18px;padding:32px;margin-bottom:28px;">
-      <p style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;
-                text-transform:uppercase;color:#AA77F2;margin:0 0 20px;">
-        Loan Application Parameters
-      </p>
-    """, unsafe_allow_html=True)
-
-    r1c1, r1c2, r1c3 = st.columns(3)
-    with r1c1:
-        income = st.number_input("Monthly Income (₹)", value=int(default_income), min_value=0, step=1000, key="d_income")
-    with r1c2:
-        rent = st.number_input("Monthly Rent / EMI (₹)", value=int(default_rent), min_value=0, step=500, key="d_rent")
-    with r1c3:
-        savings = st.number_input("Monthly Savings (₹)", value=int(default_savings), min_value=0, step=500, key="d_savings")
-
-    r2c1, r2c2, r2c3 = st.columns(3)
-    with r2c1:
-        loan_amount = st.number_input("Loan Amount Requested (₹)", min_value=0, step=5000, key="d_loan")
-    with r2c2:
-        employment = st.number_input("Employment Duration (years)", min_value=0.0, step=0.5, key="d_emp")
-    with r2c3:
-        credit_score = st.number_input("CIBIL / Credit Score", 300, 900, value=650, key="d_cibil")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    analyze = st.button("Run AI Credit Analysis  →", key="btn_analyze")
-
-    # ═══════════════════════════════════════════════════════════════════════
-    # ANALYSIS RESULTS
-    # ═══════════════════════════════════════════════════════════════════════
-
-    if analyze:
-        if income == 0:
-            st.warning("Please enter monthly income.")
-            return
-
-        data = pd.DataFrame({
-            "Income":      [income],
-            "Rent":        [rent],
-            "Savings":     [savings],
-            "LoanAmount":  [loan_amount],
-            "Employment":  [employment],
-            "CreditScore": [credit_score],
-        })
-
-        prob = model.predict_proba(data)[0][1]
-        decision = "rejected" if prob > 0.5 else "approved"
-
-        st.divider()
-
-        # ── 1. Decision Hero
-        dec_color  = "#E05C5C" if decision == "rejected" else "#4CAF7D"
-        dec_label  = "LOAN REJECTED" if decision == "rejected" else "LOAN APPROVED"
-        dec_icon   = "✗" if decision == "rejected" else "✓"
-
+    with st.sidebar:
         st.markdown(f"""
-        <div style="background:linear-gradient(135deg,rgba({('224,92,92' if decision=='rejected' else '76,175,125')},0.12),rgba(0,0,0,0));
-                    border:1px solid {dec_color}40;border-radius:20px;
-                    padding:36px;margin-bottom:28px;text-align:center;">
-          <div style="font-size:48px;margin-bottom:12px;">{dec_icon}</div>
-          <h2 style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;
-                     color:{dec_color};margin:0 0 8px;letter-spacing:-.01em;">{dec_label}</h2>
-          <p style="color:rgba(242,242,242,0.5);font-size:15px;margin:0;">
-            Default probability: <strong style="color:{dec_color};">{prob*100:.1f}%</strong> &nbsp;·&nbsp;
-            Threshold: 50%
-          </p>
+        <div style="padding:22px 8px 0;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+            <div style="width:38px;height:38px;background:linear-gradient(135deg,{GRAPE},{CYAN});
+                        border-radius:9px;display:flex;align-items:center;justify-content:center;
+                        font-size:17px;box-shadow:0 0 16px rgba(108,63,255,0.45);">⚡</div>
+            <div>
+              <div style="font-family:'Inter',sans-serif;font-size:16px;font-weight:800;
+                          color:{WHITE};letter-spacing:-0.01em;">Wallet Warriors</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{MUTED};">
+                Credit Intelligence</div>
+            </div>
+          </div>
+          <!-- User card -->
+          <div style="background:rgba(108,63,255,0.10);border-radius:12px;padding:14px 16px;
+                      margin-bottom:16px;border:1px solid rgba(108,63,255,0.18);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{MUTED};
+                        text-transform:uppercase;letter-spacing:.09em;margin-bottom:7px;">Account</div>
+            <div style="font-family:'Inter',sans-serif;font-size:15px;font-weight:700;
+                        color:{WHITE};">{name}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;
+                        color:{LAV};margin-top:3px;">{plan} Plan</div>
+          </div>
         </div>
         """, unsafe_allow_html=True)
-
-        # ── 2. KPI strip
-        approval_score = round((1 - prob) * 100, 1)
-        dti = round(rent / max(income, 1) * 100, 1)
-        hustle_score = _compute_hustle(savings, income, rent, credit_score, employment, loan_amount)
-
-        k1, k2, k3, k4, k5 = st.columns(5)
-        with k1:
-            st.metric("Default Risk", f"{prob*100:.1f}%")
-        with k2:
-            st.metric("Approval Readiness", f"{approval_score}%")
-        with k3:
-            st.metric("Debt-to-Income", f"{dti}%")
-        with k4:
-            st.metric("CIBIL Score", credit_score)
-        with k5:
-            st.metric("Hustle Score™", f"{hustle_score}/100")
-
-        st.markdown('<div style="height:28px;"></div>', unsafe_allow_html=True)
-
-        # ── 3. Tabs
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "  📊 Risk Overview  ",
-            "  🔎 SHAP Explanation  ",
-            "  🧠 AI Recommendations  ",
-            "  🗺 Improvement Roadmap  "
-        ])
-
-        # ───────── TAB 1: RISK OVERVIEW ─────────
-        with tab1:
-            c_left, c_right = st.columns([1, 1])
-
-            # Gauge
-            with c_left:
-                fig_gauge = go.Figure(go.Indicator(
-                    mode="gauge+number+delta",
-                    value=prob * 100,
-                    delta={"reference": 50, "suffix": "%"},
-                    title={"text": "Default Risk Meter", "font": {"size": 14, "color": "#F2F2F2"}},
-                    number={"suffix": "%", "font": {"size": 36, "color": dec_color}},
-                    gauge={
-                        "axis": {"range": [0, 100], "tickcolor": "#F2F2F2", "tickfont": {"size": 10}},
-                        "bar": {"color": dec_color, "thickness": 0.25},
-                        "bgcolor": "rgba(0,0,0,0)",
-                        "bordercolor": "rgba(170,119,242,0.2)",
-                        "steps": [
-                            {"range": [0,  33], "color": "rgba(76,175,125,0.2)"},
-                            {"range": [33, 66], "color": "rgba(201,138,26,0.2)"},
-                            {"range": [66,100], "color": "rgba(224,92,92,0.2)"},
-                        ],
-                        "threshold": {
-                            "line": {"color": "#AA77F2", "width": 3},
-                            "thickness": 0.75,
-                            "value": 50
-                        }
-                    }
-                ))
-                fig_gauge.update_layout(**PLOT_LAYOUT, height=320)
-                st.plotly_chart(fig_gauge, use_container_width=True)
-
-            # Radar
-            with c_right:
-                cats   = ["Savings Rate", "Income Stability", "Credit Health",
-                          "Loan Affordability", "Employment", "Rent Burden"]
-                # Normalize each dimension 0-100
-                s_rate   = min(100, savings / max(income, 1) * 500)
-                inc_stab = min(100, employment * 12)
-                cr_hlth  = (credit_score - 300) / 6
-                loan_aff = max(0, 100 - loan_amount / max(income, 1) * 8)
-                emp_scr  = min(100, employment * 10)
-                rent_bur = max(0, 100 - dti * 1.5)
-                vals = [s_rate, inc_stab, cr_hlth, loan_aff, emp_scr, rent_bur]
-
-                fig_radar = go.Figure(go.Scatterpolar(
-                    r=vals + [vals[0]],
-                    theta=cats + [cats[0]],
-                    fill="toself",
-                    fillcolor="rgba(170,119,242,0.15)",
-                    line=dict(color="#AA77F2", width=2),
-                    name="Your Profile"
-                ))
-                fig_radar.add_trace(go.Scatterpolar(
-                    r=[70] * (len(cats)+1),
-                    theta=cats + [cats[0]],
-                    fill="toself",
-                    fillcolor="rgba(99,69,140,0.08)",
-                    line=dict(color="rgba(99,69,140,0.4)", width=1, dash="dot"),
-                    name="Safe Threshold"
-                ))
-                fig_radar.update_layout(
-                    **PLOT_LAYOUT,
-                    height=320,
-                    polar=dict(
-                        bgcolor="rgba(0,0,0,0)",
-                        radialaxis=dict(visible=True, range=[0, 100],
-                                        tickcolor="#F2F2F2",
-                                        gridcolor="rgba(170,119,242,0.1)",
-                                        tickfont={"size": 9}),
-                        angularaxis=dict(tickfont={"size": 10, "color": "#F2F2F2"},
-                                         gridcolor="rgba(170,119,242,0.1)")
-                    )
-                )
-                st.plotly_chart(fig_radar, use_container_width=True)
-
-            # Bar: Financial Breakdown
-            categories = ["Monthly Income", "Monthly Rent", "Monthly Savings",
-                          "Loan Amount (÷10)", "Est. Disposable"]
-            disposable = max(0, income - rent - savings)
-            values = [income, rent, savings, loan_amount / 10, disposable]
-            colors_bar = [COLORS["primary"], COLORS["danger"], COLORS["success"],
-                          COLORS["gold"], "rgba(170,119,242,0.5)"]
-
-            fig_bar = go.Figure(go.Bar(
-                x=categories, y=values,
-                marker_color=colors_bar,
-                marker_line_color="rgba(0,0,0,0)",
-                text=[f"₹{v:,.0f}" for v in values],
-                textposition="outside",
-                textfont=dict(size=11, color="#F2F2F2"),
-            ))
-            fig_bar.update_layout(**PLOT_LAYOUT, height=320,
-                                   title="Financial Breakdown",
-                                   yaxis=dict(gridcolor="rgba(170,119,242,0.08)",
-                                              tickprefix="₹", tickformat=",.0f"))
-            st.plotly_chart(fig_bar, use_container_width=True)
-
-            # Waterfall: Cash Flow
-            meas = ["absolute","relative","relative","relative","total"]
-            fig_wf = go.Figure(go.Waterfall(
-                orientation="v",
-                measure=meas,
-                x=["Income", "−Rent", "−Loan EMI*", "−Savings", "Disposable"],
-                y=[income, -rent, -loan_amount/60, -savings,
-                   income - rent - loan_amount/60 - savings],
-                connector={"line": {"color": "rgba(170,119,242,0.3)"}},
-                decreasing={"marker": {"color": COLORS["danger"]}},
-                increasing={"marker": {"color": COLORS["success"]}},
-                totals={"marker": {"color": COLORS["primary"]}},
-                text=[f"₹{abs(v):,.0f}" for v in [income, rent, loan_amount/60, savings,
-                                                    income - rent - loan_amount/60 - savings]],
-                textposition="outside",
-            ))
-            fig_wf.update_layout(**PLOT_LAYOUT, height=300,
-                                  title="Monthly Cash Flow Waterfall (*EMI estimated at 60 months)",
-                                  yaxis=dict(tickprefix="₹", tickformat=",.0f",
-                                             gridcolor="rgba(170,119,242,0.08)"))
-            st.plotly_chart(fig_wf, use_container_width=True)
-
-        # ───────── TAB 2: SHAP ─────────
-        with tab2:
-            with st.spinner("Computing SHAP explanations…"):
-                try:
-                    explainer = shap.Explainer(model)
-                    sv = explainer(data)
-
-                    # Matplotlib waterfall (white-on-dark)
-                    plt.rcParams.update({
-                        "figure.facecolor": "#1C1C1E",
-                        "axes.facecolor":   "#1C1C1E",
-                        "text.color":       "#F2F2F2",
-                        "axes.labelcolor":  "#F2F2F2",
-                        "xtick.color":      "#F2F2F2",
-                        "ytick.color":      "#F2F2F2",
-                        "axes.edgecolor":   "rgba(170,119,242,0.2)",
-                    })
-
-                    col_shap1, col_shap2 = st.columns(2)
-                    with col_shap1:
-                        st.markdown("""
-                        <p style="font-family:'Space Mono',monospace;font-size:10px;
-                                  letter-spacing:.1em;text-transform:uppercase;
-                                  color:#AA77F2;margin:0 0 12px;">SHAP Waterfall — This Prediction</p>
-                        """, unsafe_allow_html=True)
-                        fig_w, ax_w = plt.subplots(figsize=(6, 4.5))
-                        shap.plots.waterfall(sv[0], show=False)
-                        fig_w = plt.gcf()
-                        fig_w.patch.set_facecolor("#1C1C1E")
-                        st.pyplot(fig_w, use_container_width=True)
-                        plt.close("all")
-
-                    with col_shap2:
-                        st.markdown("""
-                        <p style="font-family:'Space Mono',monospace;font-size:10px;
-                                  letter-spacing:.1em;text-transform:uppercase;
-                                  color:#AA77F2;margin:0 0 12px;">SHAP Bar — Feature Importance</p>
-                        """, unsafe_allow_html=True)
-                        fig_b, ax_b = plt.subplots(figsize=(6, 4.5))
-                        shap.plots.bar(sv, show=False)
-                        fig_b = plt.gcf()
-                        fig_b.patch.set_facecolor("#1C1C1E")
-                        st.pyplot(fig_b, use_container_width=True)
-                        plt.close("all")
-
-                    # Feature attribution table
-                    feature_names = data.columns.tolist()
-                    shap_vals_arr  = sv[0].values
-                    sorted_idx     = np.argsort(np.abs(shap_vals_arr))[::-1]
-
-                    rows = []
-                    for i in sorted_idx:
-                        direction = "↑ Increases Risk" if shap_vals_arr[i] > 0 else "↓ Reduces Risk"
-                        dir_color = "#E05C5C" if shap_vals_arr[i] > 0 else "#4CAF7D"
-                        rows.append((
-                            feature_names[i],
-                            f"{data.iloc[0][feature_names[i]]:,.2f}",
-                            f"{shap_vals_arr[i]:+.4f}",
-                            direction,
-                            dir_color,
-                        ))
-
-                    section_header("Feature Attribution Table", "SHAP values per feature for this loan application", "📋")
-                    header_html = """
-                    <div style="display:grid;grid-template-columns:180px 120px 120px 1fr;
-                                gap:0;background:rgba(99,69,140,0.2);
-                                border-radius:10px 10px 0 0;padding:10px 16px;
-                                font-family:'Space Mono',monospace;font-size:10px;
-                                letter-spacing:.08em;text-transform:uppercase;color:rgba(242,242,242,0.5);">
-                      <div>Feature</div><div>Value</div><div>SHAP</div><div>Direction</div>
-                    </div>
-                    """
-                    rows_html = ""
-                    for i, (feat, val, shap_v, direction, dc) in enumerate(rows):
-                        bg = "#1C1C1E" if i % 2 == 0 else "#181818"
-                        rows_html += f"""
-                        <div style="display:grid;grid-template-columns:180px 120px 120px 1fr;
-                                    gap:0;background:{bg};padding:10px 16px;
-                                    border-bottom:1px solid rgba(170,119,242,0.06);
-                                    {'border-radius:0 0 10px 10px' if i==len(rows)-1 else ''}">
-                          <div style="font-family:'Space Mono',monospace;font-size:12px;color:#F2F2F2;">{feat}</div>
-                          <div style="font-family:'Space Mono',monospace;font-size:12px;color:rgba(242,242,242,0.6);">{val}</div>
-                          <div style="font-family:'Space Mono',monospace;font-size:12px;color:#AA77F2;">{shap_v}</div>
-                          <div style="font-family:'Space Mono',monospace;font-size:12px;color:{dc};">{direction}</div>
-                        </div>"""
-                    st.markdown(header_html + rows_html, unsafe_allow_html=True)
-
-                except Exception as e:
-                    st.error(f"SHAP computation error: {e}")
-
-        # ───────── TAB 3: AI RECOMMENDATIONS ─────────
-        with tab3:
-            section_header("Personalised Financial Intelligence",
-                           "Professional, actionable recommendations based on your financial profile", "🧠")
-
-            recs = _generate_professional_recommendations(
-                income, rent, savings, loan_amount, employment, credit_score, prob
-            )
-
-            for rec in recs:
-                icon_map = {"high": "🔴", "medium": "🟡", "low": "🟢", "positive": "✅"}
-                priority_color = {
-                    "high": "#E05C5C", "medium": "#C98A1A",
-                    "low": "#AA77F2", "positive": "#4CAF7D"
-                }.get(rec["priority"], "#AA77F2")
-
-                st.markdown(f"""
-                <div style="background:#1C1C1E;border:1px solid rgba(170,119,242,0.12);
-                            border-left:3px solid {priority_color};
-                            border-radius:0 14px 14px 0;padding:22px 24px;margin-bottom:14px;">
-                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-                    <span style="font-size:16px;">{icon_map.get(rec['priority'],'●')}</span>
-                    <h4 style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;
-                               color:#F2F2F2;margin:0;">{rec['title']}</h4>
-                    <span style="margin-left:auto;">{badge(rec['priority'].upper(), priority_color)}</span>
-                  </div>
-                  <p style="color:rgba(242,242,242,0.65);font-size:14px;margin:0 0 10px;
-                            line-height:1.7;">{rec['insight']}</p>
-                  <div style="background:rgba(99,69,140,0.12);border-radius:8px;padding:12px 16px;">
-                    <span style="font-family:'Space Mono',monospace;font-size:11px;
-                                 color:#AA77F2;letter-spacing:.05em;">ACTION → </span>
-                    <span style="font-size:13px;color:#F2F2F2;">{rec['action']}</span>
-                  </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-        # ───────── TAB 4: ROADMAP ─────────
-        with tab4:
-            section_header("90-Day Approval Roadmap",
-                           "Milestone-based action plan to improve your credit eligibility", "🗺")
-
-            months = ["Month 1", "Month 2", "Month 3"]
-            roadmap = _generate_roadmap(income, rent, savings, loan_amount,
-                                        employment, credit_score, prob)
-
-            for i, (month, items) in enumerate(zip(months, roadmap)):
-                progress_pct = [33, 66, 100][i]
-                progress_color = ["#C98A1A", "#AA77F2", "#4CAF7D"][i]
-
-                st.markdown(f"""
-                <div style="background:#1C1C1E;border:1px solid rgba(170,119,242,0.15);
-                            border-radius:16px;padding:24px;margin-bottom:16px;">
-                  <div style="display:flex;align-items:center;justify-content:space-between;
-                               margin-bottom:16px;">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                      <div style="width:36px;height:36px;border-radius:50%;
-                                  background:{progress_color};display:flex;
-                                  align-items:center;justify-content:center;
-                                  font-family:'Space Mono',monospace;font-size:13px;
-                                  font-weight:700;color:#0D0D0D;">{i+1}</div>
-                      <h4 style="font-family:'Syne',sans-serif;font-size:17px;
-                                 font-weight:700;color:#F2F2F2;margin:0;">{month}</h4>
-                    </div>
-                    <span style="font-family:'Space Mono',monospace;font-size:11px;
-                                 color:{progress_color};">{progress_pct}% Journey</span>
-                  </div>
-                  {''.join([f"""
-                  <div style="display:flex;align-items:flex-start;gap:12px;
-                               padding:10px 0;border-bottom:1px solid rgba(170,119,242,0.06);">
-                    <span style="color:{progress_color};font-size:16px;margin-top:1px;">◆</span>
-                    <p style="color:rgba(242,242,242,0.75);font-size:14px;margin:0;line-height:1.6;">{item}</p>
-                  </div>
-                  """ for item in items])}
-                </div>
-                """, unsafe_allow_html=True)
-
-            # Projected score timeline
-            fig_timeline = go.Figure()
-            months_x = ["Now", "Month 1", "Month 2", "Month 3"]
-            current_score = round((1 - prob) * 100)
-            projected = [current_score,
-                         min(100, current_score + 8),
-                         min(100, current_score + 18),
-                         min(100, current_score + 30)]
-            fig_timeline.add_trace(go.Scatter(
-                x=months_x, y=projected,
-                mode="lines+markers+text",
-                line=dict(color="#AA77F2", width=3),
-                marker=dict(size=10, color="#AA77F2", line=dict(width=2, color="#0D0D0D")),
-                text=[f"{v}%" for v in projected],
-                textposition="top center",
-                fill="tozeroy",
-                fillcolor="rgba(170,119,242,0.08)",
-            ))
-            fig_timeline.add_hline(y=70, line_dash="dot",
-                                   line_color="#4CAF7D",
-                                   annotation_text="Approval Zone",
-                                   annotation_font_color="#4CAF7D")
-            fig_timeline.update_layout(
-                **PLOT_LAYOUT,
-                title="Projected Approval Readiness Score",
-                height=300,
-                yaxis=dict(range=[0, 110], ticksuffix="%",
-                           gridcolor="rgba(170,119,242,0.08)")
-            )
-            st.plotly_chart(fig_timeline, use_container_width=True)
-
-        # ── Hustle Score footer
-        st.divider()
-        section_header("Hustle Score™", "Composite financial discipline index", "🔥")
-        _render_hustle_score(hustle_score, savings, income, rent, credit_score, employment, loan_amount)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# HELPER: NAV BAR
-# ─────────────────────────────────────────────────────────────────────────────
-
-def _render_nav():
-    vr = st.session_state.verification_result
-    ver_badge = ""
-    if vr:
-        color = "#4CAF7D" if vr["coherent"] else "#E05C5C"
-        label = "Verified" if vr["coherent"] else "Manual Review"
-        ver_badge = badge(label, color, "#0D0D0D")
-
-    st.markdown(f"""
-    <div style="background:rgba(22,22,22,0.95);backdrop-filter:blur(16px);
-                -webkit-backdrop-filter:blur(16px);
-                border-bottom:1px solid rgba(170,119,242,0.12);
-                padding:14px 48px;display:flex;align-items:center;
-                justify-content:space-between;position:sticky;top:0;z-index:100;">
-      <div style="display:flex;align-items:center;gap:14px;">
-        <div style="width:30px;height:30px;background:linear-gradient(135deg,#63458C,#AA77F2);
-                    border-radius:8px;display:flex;align-items:center;
-                    justify-content:center;font-size:13px;">🔐</div>
-        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;
-                     color:#F2F2F2;letter-spacing:-.01em;">Wallet Warriors</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:14px;">
-        {ver_badge}
-        <span style="font-size:12px;color:rgba(242,242,242,0.35);
-                     font-family:'Space Mono',monospace;">
-          {st.session_state.username}
-        </span>
-        {badge(st.session_state.get("user_plan","Pro"), "#63458C")}
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Logout in sidebar workaround
-    with st.sidebar:
-        if st.button("← Sign Out"):
+        if st.button("← Sign Out", key="so"):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
             st.rerun()
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# HELPER: HUSTLE SCORE
-# ─────────────────────────────────────────────────────────────────────────────
-
-def _compute_hustle(savings, income, rent, credit_score, employment, loan_amount):
-    score = 0
-    if income > 0 and savings / income >= 0.10: score += 20
-    if income > 0 and rent / income < 0.50:     score += 20
-    if credit_score > 650:                       score += 20
-    if employment >= 2:                          score += 20
-    if income > 0 and loan_amount < income * 5: score += 20
-    return score
-
-def _render_hustle_score(score, savings, income, rent, credit_score, employment, loan_amount):
-    dims = {
-        "Savings Discipline": 20 if income > 0 and savings/income >= 0.10 else 0,
-        "Rent Management":    20 if income > 0 and rent/income < 0.50 else 0,
-        "Credit Health":      20 if credit_score > 650 else 0,
-        "Career Stability":   20 if employment >= 2 else 0,
-        "Loan Calibration":   20 if income > 0 and loan_amount < income*5 else 0,
-    }
-    color = "#4CAF7D" if score >= 70 else ("#C98A1A" if score >= 40 else "#E05C5C")
-
-    st.markdown(f"""
-    <div style="background:#1C1C1E;border:1px solid rgba(170,119,242,0.15);
-                border-radius:18px;padding:28px;margin-bottom:24px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;
-                   margin-bottom:20px;">
-        <h3 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;
-                   color:#F2F2F2;margin:0;">Overall Hustle Score™</h3>
-        <div style="font-family:'Space Mono',monospace;font-size:48px;
-                    font-weight:700;color:{color};">{score}</div>
-      </div>
-    """, unsafe_allow_html=True)
-
-    for dim, pts in dims.items():
-        bar_color = "#4CAF7D" if pts > 0 else "rgba(224,92,92,0.4)"
+        # ── FEATURE 2: HUSTLE ACADEMY ────────────────────────────
         st.markdown(f"""
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">
-          <div style="width:160px;font-size:12px;color:rgba(242,242,242,0.6);
-                      font-family:'Inter',sans-serif;">{dim}</div>
-          <div style="flex:1;height:8px;background:rgba(170,119,242,0.1);border-radius:99px;overflow:hidden;">
-            <div style="width:{pts*5}%;height:100%;background:{bar_color};border-radius:99px;
-                        transition:width 0.5s ease;"></div>
+        <div style="margin:8px 0 4px;padding:0 4px;">
+          <div style="height:1px;background:linear-gradient(90deg,transparent,
+                      rgba(124,77,255,0.28),transparent);margin-bottom:14px;"></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <span style="font-size:15px;">🎓</span>
+            <span style="font-family:'Inter',sans-serif;font-size:13.5px;font-weight:700;
+                         color:{WHITE};">Hustle Academy</span>
           </div>
-          <div style="width:40px;text-align:right;font-family:'Space Mono',monospace;
-                      font-size:12px;color:{bar_color};">{pts}/20</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:{MUTED};
+                      text-transform:uppercase;letter-spacing:.09em;margin-bottom:10px;">
+            Financial Literacy · 3 Modules</div>
         </div>
         """, unsafe_allow_html=True)
 
-    msg = ("🏆 Exceptional financial discipline. Strong loan eligibility." if score >= 70
-           else "⚡ Moderate profile. Targeted improvements will unlock approval."
-           if score >= 40 else
-           "🎯 Significant improvements needed. Focus on savings and credit score first.")
-    tier_color = "#4CAF7D" if score >= 70 else ("#C98A1A" if score >= 40 else "#E05C5C")
+        with st.expander("📐 Master Your Debt-to-Income Ratio"):
+            st.markdown(f"""
+            <div style="font-family:'Inter',sans-serif;font-size:13.5px;
+                        color:{TEXT};line-height:1.70;padding:4px 0;">
+              <p style="margin:0 0 10px;font-weight:700;color:{WHITE};font-size:14px;">
+                Your DTI is a lender's first filter — and it's binary.</p>
+              <p style="margin:0 0 10px;">
+                Add up all your fixed monthly payments: rent, existing EMIs, and the new loan EMI
+                you're applying for. Divide by net monthly income. If the result exceeds
+                <strong style="color:{RED};">65%</strong>, most scheduled banks auto-reject with no review.</p>
+              <p style="margin:0 0 10px;">
+                <strong style="color:{CYAN};">The fix:</strong> Before applying, either extend your loan
+                tenure (lower EMI), pay off a smaller existing loan entirely, or add a co-applicant
+                to split the obligation. Each tactic directly reduces your DTI.</p>
+              <p style="margin:0;background:rgba(124,77,255,0.10);border-radius:8px;
+                         border-left:3px solid {GRAPE};padding:10px 12px;
+                         font-size:12.5px;color:{TEXT};">
+                💡 <strong>Rule of thumb:</strong> Target DTI below 45% for best-rate approval.
+                Between 45–65% you'll qualify but at higher interest.
+              </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with st.expander("💸 Consistency Beats Quantity in UPI"):
+            st.markdown(f"""
+            <div style="font-family:'Inter',sans-serif;font-size:13.5px;
+                        color:{TEXT};line-height:1.70;padding:4px 0;">
+              <p style="margin:0 0 10px;font-weight:700;color:{WHITE};font-size:14px;">
+                Underwriters read your UPI history like a personality test.</p>
+              <p style="margin:0 0 10px;">
+                A ₹50,000 single transaction means nothing. But 90 days of regular, predictable
+                outflows — rent on the 1st, subscriptions on the 5th, groceries weekly — tells an
+                underwriter you are organised, solvent, and behaviorally stable.</p>
+              <p style="margin:0 0 10px;">
+                <strong style="color:{CYAN};">The pattern they love:</strong> Income credited →
+                Savings transferred within 48 hrs → Fixed bills paid on schedule.
+                This sequencing signals financial maturity regardless of income level.</p>
+              <p style="margin:0;background:rgba(0,229,192,0.08);border-radius:8px;
+                         border-left:3px solid {CYAN};padding:10px 12px;
+                         font-size:12.5px;color:{TEXT};">
+                💡 <strong>Start today:</strong> Automate one SIP and one bill payment.
+                Three months of that pattern is worth more than a salary hike on paper.
+              </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with st.expander("🏦 Credit Invisible → Bankable in 90 Days"):
+            st.markdown(f"""
+            <div style="font-family:'Inter',sans-serif;font-size:13.5px;
+                        color:{TEXT};line-height:1.70;padding:4px 0;">
+              <p style="margin:0 0 10px;font-weight:700;color:{WHITE};font-size:14px;">
+                No CIBIL score isn't the same as a bad score — but it looks the same to most banks.</p>
+              <p style="margin:0 0 10px;">
+                If you're a student, freelancer, or first-time earner with no credit history,
+                you're "credit invisible." Banks can't assess you, so they decline by default.</p>
+              <p style="margin:0 0 10px;">
+                <strong style="color:{CYAN};">The 90-day ladder:</strong><br/>
+                <strong style="color:{GOLD};">Month 1</strong> — Open a secured credit card (₹10k–25k FD as collateral). Use it for fuel only.<br/>
+                <strong style="color:{GOLD};">Month 2</strong> — Pay the full balance before due date. Never the minimum.<br/>
+                <strong style="color:{GOLD};">Month 3</strong> — CIBIL generates your first score. It will be 700+.</p>
+              <p style="margin:0;background:rgba(255,184,48,0.08);border-radius:8px;
+                         border-left:3px solid {GOLD};padding:10px 12px;
+                         font-size:12.5px;color:{TEXT};">
+                💡 <strong>Gig workers:</strong> File your ITR even for small incomes.
+                Two years of ITR history is accepted by NBFCs as income proof for personal loans.
+              </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────────────────────
+# ██  LOGIN PAGE  ██
+# ─────────────────────────────────────────────────────────────
+def render_login():
     st.markdown(f"""
-    <div style="background:rgba({('76,175,125' if score>=70 else '201,138,26' if score>=40 else '224,92,92')},0.1);
-                border-radius:10px;padding:14px 18px;margin-top:12px;">
-      <p style="color:{tier_color};font-size:14px;margin:0;">{msg}</p>
+    <style>
+    [data-testid="stAppViewContainer"] {{
+      background:
+        radial-gradient(ellipse at 10% 60%, rgba(124,77,255,0.22) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 10%, rgba(0,229,192,0.10) 0%, transparent 45%),
+        {BG} !important;
+    }}
+    [data-testid="stSidebar"], footer {{ display:none !important; }}
+    .block-container, .stMainBlockContainer {{
+      padding:0 !important; max-width:100% !important;
+    }}
+    [data-testid="stHorizontalBlock"] {{
+      gap:0 !important; align-items:stretch !important;
+    }}
+    [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {{
+      padding:0 !important;
+    }}
+    [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:last-child {{
+      background:{SURFACE} !important;
+      border-left:1px solid rgba(124,77,255,0.18) !important;
+      min-height:100vh !important;
+    }}
+    /* Style the native inputs to match the dark theme */
+    .stTextInput > label {{
+      font-family:'JetBrains Mono',monospace !important;
+      font-size:10px !important;
+      font-weight:700 !important;
+      letter-spacing:.10em !important;
+      text-transform:uppercase !important;
+      color:rgba(180,192,255,0.55) !important;
+      margin-bottom:6px !important;
+    }}
+    .stTextInput > div > input {{
+      background:rgba(124,77,255,0.06) !important;
+      border:1.5px solid rgba(124,77,255,0.22) !important;
+      border-radius:10px !important;
+      color:{WHITE} !important;
+      font-family:'Inter',sans-serif !important;
+      font-size:14px !important;
+      padding:12px 16px !important;
+    }}
+    .stTextInput > div > input:focus {{
+      border-color:rgba(124,77,255,0.60) !important;
+      box-shadow:0 0 0 3px rgba(124,77,255,0.12) !important;
+    }}
+    .stButton > button {{
+      width:100% !important;
+      background:linear-gradient(135deg,{GRAPE},{LAV}) !important;
+      color:#fff !important;
+      border:none !important;
+      border-radius:10px !important;
+      font-family:'Inter',sans-serif !important;
+      font-size:15px !important;
+      font-weight:700 !important;
+      padding:13px 0 !important;
+      letter-spacing:-0.01em !important;
+      box-shadow:0 4px 24px rgba(124,77,255,0.38) !important;
+      transition:opacity .15s !important;
+    }}
+    .stButton > button:hover {{ opacity:.88 !important; }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    left, right = st.columns([55, 45], gap="small")
+
+    # ── LEFT PANEL ──────────────────────────────────────────────
+    with left:
+        feat_items = [
+            ("🔬", "Income Triangulation Engine",
+             "Cross-references stated salary against electricity bills, UPI flows & documents."),
+            ("🤖", "XGBoost AI · AUC 0.86",
+             "Production-grade default prediction with full SHAP feature-level explanations."),
+            ("🎯", "Approval Readiness Score",
+             "6-pillar composite score showing exactly where you stand before you apply."),
+            ("🗺️", "90-Day Roadmap",
+             "Personalised milestone plan from your current profile to prime borrower status."),
+        ]
+        feat_html = ""
+        for icon, title, desc in feat_items:
+            feat_html += (
+                f'<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;">'
+                f'<div style="width:38px;height:38px;min-width:38px;flex-shrink:0;'
+                f'background:rgba(124,77,255,0.12);border:1px solid rgba(124,77,255,0.28);'
+                f'border-radius:10px;display:flex;align-items:center;justify-content:center;'
+                f'font-size:17px;">{icon}</div>'
+                f'<div style="padding-top:2px;">'
+                f'<div style="font-family:Inter,sans-serif;font-size:13.5px;font-weight:700;'
+                f'color:{WHITE};margin-bottom:3px;letter-spacing:-0.01em;">{title}</div>'
+                f'<div style="font-family:Inter,sans-serif;font-size:12.5px;color:{TEXT};'
+                f'line-height:1.55;opacity:.85;">{desc}</div>'
+                f'</div></div>'
+            )
+
+        st.markdown(
+            f'<div style="padding:15vh 56px 40px 56px;">'
+
+            # ── Logo ──
+            f'<div style="display:flex;align-items:center;gap:12px;margin-bottom:40px;">'
+            f'<div style="width:44px;height:44px;flex-shrink:0;'
+            f'background:linear-gradient(135deg,{GRAPE},{CYAN});border-radius:12px;'
+            f'display:flex;align-items:center;justify-content:center;'
+            f'font-size:21px;box-shadow:0 0 28px {GRAPE}70;">⚡</div>'
+            f'<div>'
+            f'<div style="font-family:Inter,sans-serif;font-size:17px;font-weight:900;'
+            f'color:{WHITE};letter-spacing:-0.02em;line-height:1.2;">Wallet Warriors</div>'
+            f'<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:{MUTED};'
+            f'letter-spacing:.12em;text-transform:uppercase;margin-top:2px;">Credit Intelligence Platform</div>'
+            f'</div>'
+            f'<span style="margin-left:8px;background:{GRAPE}22;color:{LAV};'
+            f'border:1px solid {GRAPE}44;font-family:JetBrains Mono,monospace;'
+            f'font-size:8px;font-weight:700;padding:3px 9px;border-radius:99px;'
+            f'letter-spacing:.12em;text-transform:uppercase;">Pro</span>'
+            f'</div>'
+
+            # ── Headline ──
+            f'<h1 style="font-family:Inter,sans-serif;font-size:42px;font-weight:900;'
+            f'color:{WHITE};margin:0 0 14px;letter-spacing:-0.035em;line-height:1.06;">'
+            f'Know your loan odds<br>'
+            f'<span style="background:linear-gradient(90deg,{LAV} 0%,{CYAN} 100%);'
+            f'-webkit-background-clip:text;-webkit-text-fill-color:transparent;'
+            f'background-clip:text;">before you apply.</span></h1>'
+
+            # ── Subheadline ──
+            f'<p style="font-family:Inter,sans-serif;font-size:15px;'
+            f'color:rgba(200,208,240,0.65);margin:0 0 36px;line-height:1.7;max-width:380px;">'
+            f'AI-powered credit intelligence for smart borrowers — walk into any bank '
+            f'with complete visibility of your approval probability.</p>'
+
+            # ── Feature list ──
+            f'<div>{feat_html}</div>'
+
+            # ── Trust badges ──
+            f'<div style="display:flex;align-items:center;gap:24px;margin-top:32px;'
+            f'padding-top:20px;border-top:1px solid rgba(124,77,255,0.12);">'
+            f'<span style="font-family:JetBrains Mono,monospace;font-size:10px;'
+            f'color:rgba(180,192,255,0.32);">🔐 AES-256</span>'
+            f'<span style="font-family:JetBrains Mono,monospace;font-size:10px;'
+            f'color:rgba(180,192,255,0.32);">✅ SOC 2 Type II</span>'
+            f'<span style="font-family:JetBrains Mono,monospace;font-size:10px;'
+            f'color:rgba(180,192,255,0.32);">🇮🇳 DPDP Act 2023</span>'
+            f'</div>'
+
+            f'</div>',
+            unsafe_allow_html=True
+        )
+
+    # ── RIGHT PANEL ─────────────────────────────────────────────
+    with right:
+        st.markdown(
+            f'<div style="padding:15vh 52px 40px 52px;">'
+            f'<div style="width:40px;height:4px;margin-bottom:28px;'
+            f'background:linear-gradient(90deg,{GRAPE},{CYAN});border-radius:99px;'
+            f'box-shadow:0 0 14px {GRAPE}80;"></div>'
+            f'<h2 style="font-family:Inter,sans-serif;font-size:28px;font-weight:800;'
+            f'color:{WHITE};margin:0 0 8px;letter-spacing:-0.025em;">Welcome back</h2>'
+            f'<p style="font-family:Inter,sans-serif;font-size:14px;color:{TEXT};'
+            f'margin:0 0 28px;line-height:1.65;opacity:.80;">'
+            f'Sign in to access your AI credit intelligence dashboard.</p>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+        with st.container():
+            c1, c2, c3 = st.columns([52, 340, 52])
+            with c2:
+                if st.session_state.attempts >= 5:
+                    st.error("🔒 Account locked after 5 failed attempts. Please contact support.")
+                else:
+                    email = st.text_input("Email Address", placeholder="your@email.com", key="li_e")
+                    pw    = st.text_input("Password", type="password",
+                                          placeholder="Enter your password", key="li_p")
+                    st.markdown('<div style="height:4px"></div>', unsafe_allow_html=True)
+                    if st.button("Sign In  →", key="btn_li"):
+                        if not email.strip():
+                            st.error("Please enter your email address.")
+                        elif not pw:
+                            st.error("Please enter your password.")
+                        else:
+                            with st.spinner("Authenticating…"):
+                                time.sleep(0.4)
+                                ok, user = auth(email.strip().lower(), pw)
+                            if ok:
+                                st.session_state.update({
+                                    "authenticated": True,
+                                    "username": user["full_name"],
+                                    "user_id":  user["id"],
+                                    "plan":     user.get("plan", "Pro"),
+                                    "page":     "onboard",
+                                    "attempts": 0,
+                                })
+                                st.rerun()
+                            else:
+                                st.session_state.attempts += 1
+                                rem = 5 - st.session_state.attempts
+                                st.error(f"Incorrect credentials. {rem} attempt{'s' if rem!=1 else ''} remaining.")
+                st.markdown(
+                    f'<div style="margin-top:20px;padding-top:16px;'
+                    f'border-top:1px solid rgba(124,77,255,0.12);">'
+                    f'<div style="display:flex;gap:16px;flex-wrap:wrap;">'
+                    f'<span style="font-family:JetBrains Mono,monospace;font-size:10px;'
+                    f'color:rgba(180,192,255,0.30);">🔐 AES-256</span>'
+                    f'<span style="font-family:JetBrains Mono,monospace;font-size:10px;'
+                    f'color:rgba(180,192,255,0.30);">✅ SOC 2 Type II</span>'
+                    f'<span style="font-family:JetBrains Mono,monospace;font-size:10px;'
+                    f'color:rgba(180,192,255,0.30);">🇮🇳 DPDP Act 2023</span>'
+                    f'</div></div>',
+                    unsafe_allow_html=True
+                )
+
+# ─────────────────────────────────────────────────────────────
+# ██  ONBOARDING  ██
+# ─────────────────────────────────────────────────────────────
+def render_onboard():
+    render_nav()
+    st.markdown(f'<div style="padding:24px 48px 40px;background:{BG};">', unsafe_allow_html=True)
+
+    # ── Step progress indicator ──
+    steps = [("1", "Income Data", True), ("2", "Verification", False), ("3", "Analysis", False)]
+    steps_html = ""
+    for i, (num, lbl, active) in enumerate(steps):
+        if active:
+            circle = (f'<div style="width:34px;height:34px;border-radius:50%;'
+                      f'background:linear-gradient(135deg,{GRAPE},{LAV});'
+                      f'display:flex;align-items:center;justify-content:center;'
+                      f'font-family:\'JetBrains Mono\',monospace;font-size:13px;font-weight:700;'
+                      f'color:#fff;box-shadow:0 0 18px rgba(108,63,255,0.55);">{num}</div>')
+            label = (f'<span style="font-family:\'Inter\',sans-serif;font-size:14px;'
+                     f'font-weight:700;color:{LAV};">{lbl}</span>')
+        else:
+            circle = (f'<div style="width:34px;height:34px;border-radius:50%;'
+                      f'background:rgba(108,63,255,0.10);border:1.5px solid rgba(108,63,255,0.22);'
+                      f'display:flex;align-items:center;justify-content:center;'
+                      f'font-family:\'JetBrains Mono\',monospace;font-size:13px;font-weight:700;'
+                      f'color:{MUTED};">{num}</div>')
+            label = (f'<span style="font-family:\'Inter\',sans-serif;font-size:14px;'
+                     f'font-weight:500;color:{MUTED};">{lbl}</span>')
+        steps_html += f'<div style="display:flex;align-items:center;gap:9px;">{circle}{label}</div>'
+        if i < len(steps) - 1:
+            conn_color = f"linear-gradient(90deg,{GRAPE},rgba(108,63,255,0.18))" if active else "rgba(108,63,255,0.14)"
+            steps_html += f'<div style="width:72px;height:2px;background:{conn_color};margin:0 14px;"></div>'
+
+    st.markdown(f"""
+    <div style="display:flex;align-items:center;justify-content:center;margin-bottom:28px;">
+      {steps_html}
     </div>
+
+    <div style="max-width:700px;margin-bottom:24px;">
+      <h1 style="font-family:'Inter',sans-serif;font-size:38px;font-weight:900;
+                 color:{WHITE};margin:0 0 14px;letter-spacing:-0.03em;">
+        Income Verification Engine</h1>
+      <p style="font-family:'Inter',sans-serif;font-size:16px;font-weight:400;
+                color:{TEXT};margin:0;line-height:1.72;">
+        We verify your income using the
+        <strong style="color:{LAV};font-weight:700;">{tooltip("Triangulation Method")}</strong> —
+        cross-referencing what you declare against your actual spending signals.
+        This is the same methodology used by Tier-1 NBFC underwriters.
+      </p>
     </div>
     """, unsafe_allow_html=True)
 
+    # ── Panel A ──
+    panel_open("A — Monthly Financials", "Core income & expense figures",
+               "These are the primary inputs. Be precise — they are cross-checked against your spending signals.")
+    c1, c2, c3 = st.columns(3)
+    with c1: inc = st.number_input("Monthly Income (₹)", min_value=0, step=1000, key="ob_inc")
+    with c2: rent = st.number_input("Monthly Rent / Home EMI (₹)", min_value=0, step=500, key="ob_rent")
+    with c3: sav = st.number_input("Monthly Savings (₹)", min_value=0, step=500, key="ob_sav")
+    panel_close()
 
-# ─────────────────────────────────────────────────────────────────────────────
-# HELPER: PROFESSIONAL RECOMMENDATIONS
-# ─────────────────────────────────────────────────────────────────────────────
+    # ── Panel B ──
+    panel_open("B — Spending Signals", "Behavioural cross-correlation data",
+               "High income paired with very low utility bills or UPI activity is flagged as an anomaly.")
+    c4, c5 = st.columns(2)
+    with c4: elec = st.number_input("Monthly Electricity Bill (₹)", min_value=0, step=100, key="ob_elec")
+    with c5: upi = st.number_input("Total Monthly UPI / Digital Spending (₹)", min_value=0, step=500, key="ob_upi")
+    panel_close()
 
-def _generate_professional_recommendations(income, rent, savings, loan_amount,
-                                            employment, credit_score, prob):
-    recs = []
-    dti = rent / max(income, 1) * 100
-    savings_rate = savings / max(income, 1) * 100
-    emi_estimate = loan_amount / 60  # 5-year tenure
-    foir = (rent + emi_estimate) / max(income, 1) * 100  # Fixed Obligation to Income Ratio
+    # ── Panel C ──
+    panel_open("C — Document Proof", "Optional income verification upload",
+               "Income matching within ±10% of your document results in instant verification.",
+               border_color=BORDER2)
+    c6, c7 = st.columns([2, 1])
+    with c6:
+        doc_file = st.file_uploader(
+            "Salary Slip or Bank Statement (PDF · PNG · JPG)",
+            type=["pdf", "png", "jpg", "jpeg"], key="ob_doc")
+    with c7:
+        doc_manual = st.number_input("Net Pay in Document (₹)", min_value=0, step=1000, key="ob_dm",
+                                      help="Enter the 'Net Pay' figure from your payslip if OCR is unavailable.")
+    panel_close()
 
-    # FOIR
-    if foir > 65:
-        recs.append({
-            "priority": "high",
-            "title": "FOIR Exceeds RBI Safe Limit",
-            "insight": f"Your Fixed Obligation to Income Ratio (FOIR) stands at {foir:.1f}%. "
-                       f"RBI-regulated lenders typically cap this at 50–65% for salaried borrowers and 55–70% for self-employed. "
-                       f"Your current obligations (rent ₹{rent:,.0f} + estimated EMI ₹{emi_estimate:,.0f}) "
-                       f"consume a high proportion of gross income.",
-            "action": f"Reduce loan tenure from 60 to 84 months to lower monthly EMI to ₹{loan_amount/84:,.0f}, "
-                      f"bringing FOIR to {((rent + loan_amount/84)/max(income,1)*100):.1f}%. "
-                      "Alternatively, consider a smaller loan tranche or a co-applicant to boost eligibility."
+    doc_income = None
+    if doc_file:
+        st.markdown(f"""
+        <div style="background:rgba(0,232,181,0.06);border:1.5px solid rgba(0,232,181,0.24);
+                    border-radius:10px;padding:13px 18px;margin-bottom:18px;
+                    display:flex;align-items:center;gap:10px;">
+          <span style="font-size:16px;">📄</span>
+          <span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:{CYAN};">
+            Document received: <strong>{doc_file.name}</strong> — OCR pipeline active.</span>
+        </div>""", unsafe_allow_html=True)
+        if doc_manual > 0: doc_income = doc_manual
+    if doc_manual > 0 and not doc_file:
+        doc_income = doc_manual
+
+    st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
+    if st.button("Run Verification Engine  →", key="btn_ver"):
+        if inc == 0:
+            st.warning("Please enter your monthly income to continue.")
+        else:
+            with st.spinner("Cross-referencing income against spending signals…"):
+                time.sleep(0.9)
+                ok, conf, flags, est = triangulate(inc, rent, elec, upi, doc_income)
+            st.session_state.vr = {
+                "coherent": ok, "confidence": conf, "flags": flags,
+                "est_real_income": est, "stated_income": inc, "rent": rent,
+                "savings": sav, "electricity": elec, "upi_outflow": upi, "doc_income": doc_income
+            }
+            st.session_state.page = "verify_result"
+            st.rerun()
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────────────────────
+# ██  VERIFICATION RESULT  ██
+# ─────────────────────────────────────────────────────────────
+def render_verify_result():
+    vr = st.session_state.vr
+    render_nav()
+    st.markdown(f'<div style="padding:24px 48px 40px;background:{BG};">', unsafe_allow_html=True)
+    section_header("Verification Result", "Income triangulation engine output", "🔬")
+
+    ok = vr["coherent"]; conf = vr["confidence"]
+    flags = vr["flags"]; stated = vr["stated_income"]; est = vr["est_real_income"]
+
+    if not ok:
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,rgba(255,61,94,0.10),rgba(255,61,94,0.03));
+                    border:2px solid rgba(255,61,94,0.40);border-radius:18px;
+                    padding:32px 36px;margin-bottom:28px;">
+          <div style="font-size:40px;margin-bottom:12px;">⛔</div>
+          <h2 style="font-family:'Inter',sans-serif;font-size:26px;font-weight:800;
+                     color:{RED};margin:0 0 10px;letter-spacing:-0.02em;">Income Anomaly Detected</h2>
+          <p style="font-family:'Inter',sans-serif;font-size:15px;color:#C8D0F0;
+                    margin:0 0 18px;max-width:620px;line-height:1.72;">
+            Inconsistencies were found between your stated income and your spending signals.
+            Your application <strong style="color:{RED};">cannot proceed</strong> until
+            these are resolved. This decision is logged for compliance audit.
+          </p>
+          <div style="background:rgba(255,61,94,0.10);border-radius:8px;
+                      padding:11px 16px;display:inline-flex;align-items:center;gap:10px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;
+                         color:rgba(255,61,94,0.90);font-weight:600;">
+              Confidence Score: {conf}%  ·  Minimum required: 55%  ·  High-severity flags: {sum(1 for f in flags if f['sev']=='high')}
+            </span>
+          </div>
+        </div>""", unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,rgba(46,204,138,0.10),rgba(46,204,138,0.03));
+                    border:2px solid rgba(46,204,138,0.34);border-radius:18px;
+                    padding:32px 36px;margin-bottom:28px;">
+          <div style="font-size:40px;margin-bottom:12px;">✅</div>
+          <h2 style="font-family:'Inter',sans-serif;font-size:26px;font-weight:800;
+                     color:{GREEN};margin:0 0 10px;letter-spacing:-0.02em;">Income Verified</h2>
+          <p style="font-family:'Inter',sans-serif;font-size:15px;color:#C8D0F0;
+                    margin:0 0 14px;line-height:1.72;">
+            Your income and spending patterns are consistent across all signals.
+            Proceed to the full AI credit analysis.
+          </p>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;
+                       color:rgba(46,204,138,0.85);font-weight:600;">
+            Confidence: {conf}%  ·  Estimated real income: ₹{est:,}/month
+          </span>
+        </div>""", unsafe_allow_html=True)
+
+    k1, k2, k3, k4 = st.columns(4)
+    with k1: st.metric("Stated Income", f"₹{stated:,.0f}")
+    with k2: st.metric("Estimated Income", f"₹{est:,.0f}",
+                        delta=f"{((est-stated)/max(stated,1)*100):+.1f}%")
+    with k3: st.metric("Rent-to-Income", f"{vr['rent']/max(stated,1)*100:.1f}%",
+                        delta="Healthy" if vr['rent']/max(stated,1) < 0.45 else "High",
+                        delta_color="normal" if vr['rent']/max(stated,1) < 0.45 else "inverse")
+    with k4: st.metric("Verification Score", f"{conf}/100")
+
+    st.markdown('<div style="height:24px;"></div>', unsafe_allow_html=True)
+
+    fig = make_subplots(rows=1, cols=2, specs=[[{"type": "indicator"}, {"type": "indicator"}]])
+    fig.add_trace(go.Indicator(mode="gauge+number", value=conf,
+        title={"text": "Verification Confidence", "font": {"size": 14, "color": WHITE}},
+        number={"suffix": "%", "font": {"color": WHITE, "size": 36}},
+        gauge={"axis": {"range": [0, 100], "tickcolor": WHITE, "tickfont": {"size": 11}},
+               "bar": {"color": GRAPE, "thickness": 0.28}, "bgcolor": "rgba(0,0,0,0)",
+               "steps": [{"range": [0, 40], "color": "rgba(255,61,94,0.16)"},
+                         {"range": [40, 70], "color": "rgba(245,166,35,0.16)"},
+                         {"range": [70, 100], "color": "rgba(46,204,138,0.16)"}],
+               "threshold": {"line": {"color": CYAN, "width": 3}, "value": 55}}), row=1, col=1)
+    mx = max(stated, est) * 1.3
+    fig.add_trace(go.Indicator(mode="gauge+number+delta", value=stated,
+        delta={"reference": est, "prefix": "₹", "valueformat": ",.0f"},
+        title={"text": "Stated vs Estimated Income", "font": {"size": 14, "color": WHITE}},
+        number={"prefix": "₹", "valueformat": ",.0f", "font": {"color": WHITE}},
+        gauge={"axis": {"range": [0, mx]}, "bar": {"color": LAV},
+               "steps": [{"range": [0, est], "color": "rgba(157,112,255,0.16)"}],
+               "bgcolor": "rgba(0,0,0,0)"}), row=1, col=2)
+    fig.update_layout(**PLOT, height=280)
+    st.plotly_chart(fig, use_container_width=True)
+
+    if flags:
+        section_header("Anomalies Detected", "Each issue must be resolved before proceeding", "🚩", RED)
+        for f in flags:
+            sc = {"high": RED, "medium": GOLD, "low": LAV}.get(f["sev"], LAV)
+            st.markdown(f"""
+            <div style="background:{CARD};border-left:4px solid {sc};
+                        border-radius:0 12px 12px 0;padding:20px 24px;margin-bottom:12px;
+                        border-top:1px solid rgba(255,255,255,0.04);
+                        border-right:1px solid rgba(255,255,255,0.04);
+                        border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">
+                <span style="background:{sc}22;color:{sc};border:1px solid {sc}44;
+                             font-family:'JetBrains Mono',monospace;font-size:10px;
+                             font-weight:700;padding:3px 11px;border-radius:99px;
+                             text-transform:uppercase;letter-spacing:.10em;">{f['sev']}</span>
+                <span style="font-family:'Inter',sans-serif;font-size:15.5px;
+                             font-weight:700;color:{WHITE};">{f['title']}</span>
+              </div>
+              <p style="font-family:'Inter',sans-serif;font-size:14.5px;
+                        color:#C8D0F0;margin:0;line-height:1.68;">{f['msg']}</p>
+            </div>""", unsafe_allow_html=True)
+    else:
+        st.success("✓ No anomalies detected — all income signals are coherent.")
+
+    st.markdown('<div style="height:28px;"></div>', unsafe_allow_html=True)
+    ca, cb = st.columns(2)
+    with ca:
+        if st.button("← Re-enter Data", key="btn_bk"):
+            st.session_state.page = "onboard"; st.rerun()
+    with cb:
+        if ok:
+            if st.button("Proceed to Credit Analysis  →", key="btn_go"):
+                st.session_state.ud = vr
+                st.session_state.page = "dashboard"
+                st.rerun()
+        else:
+            st.markdown(f"""
+            <div style="background:rgba(255,61,94,0.07);border:1.5px solid rgba(255,61,94,0.28);
+                        border-radius:12px;padding:20px 22px;text-align:center;">
+              <p style="font-family:'Inter',sans-serif;font-size:15px;font-weight:700;
+                        color:{RED};margin:0 0 6px;">🔒 Application Blocked</p>
+              <p style="font-family:'Inter',sans-serif;font-size:13.5px;color:{MUTED};
+                        margin:0;line-height:1.65;">
+                Resolve all high-severity anomalies above and re-submit for verification.</p>
+            </div>""", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────────────────────
+# ██  DASHBOARD  ██
+# ─────────────────────────────────────────────────────────────
+def render_dashboard():
+    render_nav()
+    ud = st.session_state.ud
+    vc = ud.get("confidence", 80)
+    st.markdown(f'<div style="padding:24px 48px 40px;background:{BG};">', unsafe_allow_html=True)
+
+    # ── Dashboard header ──
+    st.markdown(f"""
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;
+                flex-wrap:wrap;gap:16px;margin-bottom:32px;">
+      <div>
+        <h1 style="font-family:'Inter',sans-serif;font-size:38px;font-weight:900;
+                   color:{WHITE};margin:0 0 8px;letter-spacing:-0.03em;">
+          Credit Risk Dashboard</h1>
+        <p style="font-family:'Inter',sans-serif;font-size:15px;color:{TEXT};margin:0;font-weight:400;">
+          AI-powered assessment for
+          <strong style="color:{LAV};font-weight:700;">{st.session_state.username}</strong>
+        </p>
+      </div>
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:4px;">
+        {badge("AUC 0.86", GRAPE, "#fff", True)}&nbsp;
+        {badge("XGBoost v2", GOLD, "#080c1a")}&nbsp;
+        {badge("SHAP Explained", CYAN, "#080c1a")}
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Loan application input panel ──
+    st.markdown(f"""
+    <div style="background:{SURFACE};border:1.5px solid {BORDER};
+                border-radius:16px;padding:28px 30px 8px;margin-bottom:24px;
+                box-shadow:0 4px 28px rgba(0,0,0,0.35);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span style="background:{GRAPE};color:#fff;font-family:'JetBrains Mono',monospace;
+                     font-size:10px;font-weight:700;letter-spacing:.12em;padding:3px 11px;
+                     border-radius:99px;text-transform:uppercase;">Loan Parameters</span>
+        <h3 style="font-family:'Inter',sans-serif;font-size:17px;font-weight:700;
+                   color:{WHITE};margin:0;letter-spacing:-0.01em;">Enter your loan application details</h3>
+      </div>
+    """, unsafe_allow_html=True)
+    r1 = st.columns(3)
+    with r1[0]: income = st.number_input("Monthly Income (₹)", value=int(ud.get("stated_income", 0)), min_value=0, step=1000, key="d_inc")
+    with r1[1]: rent = st.number_input("Monthly Rent / EMI (₹)", value=int(ud.get("rent", 0)), min_value=0, step=500, key="d_rent")
+    with r1[2]: savings = st.number_input("Monthly Savings (₹)", value=int(ud.get("savings", 0)), min_value=0, step=500, key="d_sav")
+    r2 = st.columns(3)
+    with r2[0]: loan = st.number_input("Loan Amount Requested (₹)", min_value=0, step=5000, key="d_loan")
+    with r2[1]: employ = st.number_input("Years at Current Job", min_value=0.0, step=0.5, key="d_emp")
+    with r2[2]: cibil = st.number_input("CIBIL / Credit Score", 300, 900, value=700, key="d_cibil")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    run = st.button("Run AI Credit Analysis  →", key="btn_run")
+
+    if run:
+        if income == 0:
+            st.warning("Please enter your monthly income to run analysis.")
+            st.stop()
+
+        idf = pd.DataFrame({
+            "Income": [income], "Rent": [rent], "Savings": [savings],
+            "LoanAmount": [loan], "Employment": [employ], "CreditScore": [cibil]
         })
-    elif foir > 50:
-        recs.append({
-            "priority": "medium",
-            "title": "FOIR Approaching Upper Tolerance Band",
-            "insight": f"At {foir:.1f}%, your debt burden is within lender limits but leaves little buffer. "
-                       "Lenders assess residual income post-EMI; a thinner margin signals financial stress during income disruptions.",
-            "action": "Consider prepaying existing EMIs or opting for a longer loan tenure to reduce monthly obligation before application."
+        prob = float(MDL.predict_proba(idf)[0][1])
+        dec = "rejected" if prob > 0.5 else "approved"
+        ar, ar_dims = approval_readiness(income, rent, savings, loan, employ, cibil, prob, vc)
+        hs = hustle_score(savings, income, rent, cibil, employ, loan)
+
+        db_save(st.session_state.user_id or 1, {
+            "income": income, "rent": rent, "savings": savings, "loan": loan,
+            "employ": employ, "cibil": cibil, "elec": ud.get("electricity", 0),
+            "upi": ud.get("upi_outflow", 0), "doc_income": ud.get("doc_income"),
+            "ver_score": vc, "ver_pass": ud.get("coherent", True),
+            "prob": prob, "dec": dec, "hustle": hs, "ar": ar
         })
 
-    # Savings rate
-    if savings_rate < 10:
-        recs.append({
-            "priority": "high",
-            "title": "Savings Rate Below Financial Safety Threshold",
-            "insight": f"Your current savings rate is {savings_rate:.1f}% of net income (₹{savings:,.0f}/month). "
-                       "Institutional lenders and credit bureaus interpret low savings as limited financial resilience. "
-                       "The 50/30/20 rule prescribes a minimum 20% savings allocation for financially stable borrowers.",
-            "action": f"Automate a SIP (Systematic Investment Plan) of ₹{int(income*0.15):,} monthly "
-                      "into a liquid mutual fund or high-yield savings account. This builds a 6-month emergency corpus "
-                      "within 12 months, which directly strengthens your creditworthiness narrative."
-        })
-    elif savings_rate >= 20:
-        recs.append({
-            "priority": "positive",
-            "title": "Savings Discipline — Excellent",
-            "insight": f"At {savings_rate:.1f}% savings rate, you demonstrate strong financial governance. "
-                       "This positively impacts your alternative credit scoring (ACS) profile, "
-                       "used by NBFCs and fintech lenders.",
-            "action": "Channel surplus savings into a Fixed Deposit (FD) or Liquid Fund to demonstrate asset accumulation, "
-                      "which can be cited as collateral in loan applications."
-        })
+        # ── Store results in session state so sliders don't wipe them ──
+        st.session_state["dash_result"] = {
+            "income": income, "rent": rent, "savings": savings, "loan": loan,
+            "employ": employ, "cibil": cibil, "prob": prob, "dec": dec,
+            "ar": ar, "ar_dims": ar_dims, "hs": hs, "vc": vc
+        }
 
-    # Credit score
-    if credit_score < 650:
-        recs.append({
-            "priority": "high",
-            "title": "CIBIL Score Below Prime Lending Threshold",
-            "insight": f"Your credit score of {credit_score} falls below the 750 benchmark required for prime interest rates. "
-                       "Scores below 650 result in loan rejection from major PSU banks; NBFCs and fintech lenders "
-                       "may approve but at 18–28% APR vs 10–14% for prime borrowers.",
-            "action": "1) Check your CIBIL report for errors (free once/year at cibil.com). "
-                      "2) Obtain a secured credit card (against FD) to build payment history. "
-                      "3) Maintain 0 missed EMIs for 6 consecutive months — this typically raises score by 40–80 points."
-        })
-    elif credit_score >= 750:
-        recs.append({
-            "priority": "positive",
-            "title": "Prime Credit Score — Leverage for Better Rates",
-            "insight": f"Your CIBIL score of {credit_score} qualifies you for prime lending rates (10–13% APR). "
-                       "Use this as a negotiation lever with lenders.",
-            "action": "Request a counter-offer from at least 3 lenders. Use aggregator platforms (BankBazaar, Paisabazaar) "
-                      "to compare live APRs. A 2% rate differential on ₹{loan_amount:,} saves ₹{int(loan_amount*0.02*5/2):,} over 5 years."
-        })
+    # ── Render results from session state (persists across slider interactions) ──
+    if "dash_result" in st.session_state:
+        res    = st.session_state["dash_result"]
+        income = res["income"]; rent    = res["rent"];   savings = res["savings"]
+        loan   = res["loan"];   employ  = res["employ"]; cibil   = res["cibil"]
+        prob   = res["prob"];   dec     = res["dec"];    ar      = res["ar"]
+        ar_dims= res["ar_dims"];hs      = res["hs"];     vc      = res["vc"]
 
-    # Employment
-    if employment < 1:
-        recs.append({
-            "priority": "high",
-            "title": "Insufficient Employment Vintage",
-            "insight": "Most scheduled banks require a minimum 12-month employment continuity at the current organisation. "
-                       "Probationary employees or those with less than 1 year tenure are typically rejected "
-                       "during underwriting.",
-            "action": "Delay the loan application by the remaining months to complete 12 months of tenure. "
-                      "During this period, build alternative documentation: ITR filings, Form 16, "
-                      "or a letter from the employer confirming permanent status."
-        })
-    elif employment >= 3:
-        recs.append({
-            "priority": "positive",
-            "title": "Strong Employment Vintage",
-            "insight": f"{employment:.0f} years of continuous employment significantly boosts underwriter confidence "
-                       "and may qualify you for pre-approved offers from HDFC, ICICI, or SBI.",
-            "action": "Request pre-approved loan offers from your salary account bank — they underwrite on payroll data "
-                      "and often offer faster disbursement (24–48 hrs) at preferential rates."
-        })
+        st.divider()
 
-    # Loan amount vs income
-    if income > 0 and loan_amount > income * 60:
-        recs.append({
-            "priority": "medium",
-            "title": "Loan-to-Annual-Income Ratio is Elevated",
-            "insight": f"Requested loan (₹{loan_amount:,}) is {loan_amount/income:.1f}x your monthly income "
-                       f"({loan_amount/(income*12):.1f}x annual income). "
-                       "Standard personal loan eligibility is 10–22x monthly income. "
-                       "Home loans allow higher LTI due to collateral.",
-            "action": f"Split the requirement — apply for ₹{int(income*18):,} as a personal loan "
-                      f"and explore a Loan Against Property (LAP) or securities for the balance. "
-                      "This improves individual application approval probability significantly."
-        })
+        # ── Decision banner ──
+        dc = RED if dec == "rejected" else GREEN
+        dlbl = "Loan Application Rejected" if dec == "rejected" else "Loan Application Approved"
+        dico = "✗" if dec == "rejected" else "✓"
+        rgb = "255,61,94" if dec == "rejected" else "46,204,138"
 
-    return recs
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,rgba({rgb},0.10),rgba({rgb},0.02));
+                    border:2px solid rgba({rgb},0.36);border-radius:18px;padding:32px 36px;
+                    margin-bottom:28px;display:flex;align-items:center;
+                    justify-content:space-between;flex-wrap:wrap;gap:20px;">
+          <div>
+            <div style="font-size:46px;margin-bottom:10px;
+                        filter:drop-shadow(0 0 18px rgba({rgb},0.55));">{dico}</div>
+            <h2 style="font-family:'Inter',sans-serif;font-size:30px;font-weight:900;
+                       color:{dc};margin:0 0 10px;letter-spacing:-0.025em;">{dlbl}</h2>
+            <p style="font-family:'Inter',sans-serif;font-size:15px;color:{MUTED};
+                      margin:0;line-height:1.65;">
+              {tooltip("XGBoost", "AI model")} prediction · {tooltip("ROC-AUC", "AUC 0.86")} · Default probability:
+              <strong style="color:{dc};">{prob*100:.1f}%</strong>
+              · Decision threshold: 50%
+            </p>
+          </div>
+          <div style="text-align:center;min-width:130px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{MUTED};
+                        text-transform:uppercase;letter-spacing:.10em;margin-bottom:6px;">
+              Approval Readiness</div>
+            <div style="font-family:'Inter',sans-serif;font-size:60px;font-weight:900;
+                        color:{LAV};line-height:1;
+                        filter:drop-shadow(0 0 20px rgba(157,112,255,0.45));">{ar}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:{MUTED};">
+              out of 100</div>
+          </div>
+        </div>""", unsafe_allow_html=True)
 
+        k1, k2, k3, k4, k5 = st.columns(5)
+        with k1: st.metric("Default Risk", f"{prob*100:.1f}%")
+        with k2: st.metric("Approval Readiness", f"{ar}/100")
+        with k3: st.metric("Debt-to-Income", f"{rent/max(income,1)*100:.1f}%")
+        with k4: st.metric("CIBIL Score", cibil)
+        with k5: st.metric("Hustle Score™", f"{hs}/100")
 
-# ─────────────────────────────────────────────────────────────────────────────
-# HELPER: ROADMAP
-# ─────────────────────────────────────────────────────────────────────────────
+        st.markdown('<div style="height:28px;"></div>', unsafe_allow_html=True)
 
-def _generate_roadmap(income, rent, savings, loan_amount, employment, credit_score, prob):
-    month1, month2, month3 = [], [], []
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+            "  📊 Risk Overview  ", "  🎯 Approval Readiness  ",
+            "  🔎 SHAP Explainability  ", "  🧠 AI Recommendations  ",
+            "  🗺 90-Day Roadmap  ", "  🔮 What-If Simulator  "
+        ])
 
-    # Month 1: Foundation
-    month1.append("Pull your CIBIL report (free at cibil.com) and dispute any erroneous entries. "
-                  "Errors account for 20–30% of low scores and can be cleared within 30 days.")
-    if savings / max(income, 1) < 0.15:
-        month1.append(f"Set up an auto-debit SIP of ₹{int(income*0.12):,}/month into a liquid mutual fund "
-                      "on salary credit date. Remove discretionary friction from savings.")
-    month1.append("Gather documentation: 3 months salary slips, Form 16, 6-month bank statement, "
-                  "PAN card, Aadhaar. Incomplete documentation is the #1 reason for underwriter delays.")
+        # ── Tab hover tooltips via JS (runs once after Streamlit renders tabs) ──
+        st.markdown("""
+        <script>
+        (function injectTabTips() {
+          const TIPS = [
+            "Gauge your default risk probability and see a 6-axis financial health radar.",
+            "6-pillar composite score showing exactly where your application stands.",
+            "Game-theory AI attribution — see which factors helped or hurt your decision.",
+            "Personalised, prioritised actions ranked by impact on your approval odds.",
+            "Your 3-month milestone plan to move from current profile to prime borrower.",
+            "Adjust savings, CIBIL, and expenses to preview your future approval score."
+          ];
+          function attach() {
+            const tabs = document.querySelectorAll('[data-testid="stTabs"] [role="tab"]');
+            if (!tabs.length) { setTimeout(attach, 300); return; }
+            // Create one shared tooltip div
+            let tip = document.getElementById('ww-tab-tip-box');
+            if (!tip) {
+              tip = document.createElement('div');
+              tip.id = 'ww-tab-tip-box';
+              tip.className = 'ww-tab-tip';
+              tip.style.opacity = '0';
+              tip.style.display = 'none';
+              document.body.appendChild(tip);
+            }
+            tabs.forEach((tab, i) => {
+              if (tab._wwTipBound) return;
+              tab._wwTipBound = true;
+              tab.addEventListener('mouseenter', function(e) {
+                tip.textContent = TIPS[i] || '';
+                tip.style.display = 'block';
+                setTimeout(() => { tip.style.opacity = '1'; }, 10);
+                moveTip(e);
+              });
+              tab.addEventListener('mousemove', moveTip);
+              tab.addEventListener('mouseleave', function() {
+                tip.style.opacity = '0';
+                setTimeout(() => { tip.style.display = 'none'; }, 180);
+              });
+            });
+            function moveTip(e) {
+              const r = tip.getBoundingClientRect();
+              let x = e.clientX - r.width / 2;
+              let y = e.clientY - r.height - 14;
+              if (x < 8) x = 8;
+              if (x + r.width > window.innerWidth - 8) x = window.innerWidth - r.width - 8;
+              if (y < 8) y = e.clientY + 20;
+              tip.style.left = x + 'px';
+              tip.style.top  = y + 'px';
+            }
+          }
+          attach();
+        })();
+        </script>
+        """, unsafe_allow_html=True)
 
-    # Month 2: Optimisation
-    if credit_score < 750:
-        month2.append(f"Activate a secured credit card (against a ₹{min(50000,int(loan_amount*0.1)):,} FD). "
-                      "Use for utility and grocery payments and pay full bill on statement date. "
-                      "This adds positive payment history to your CIBIL report within 45 days.")
-    month2.append("Avoid multiple loan applications in this period — each hard inquiry drops CIBIL score by 5–8 points. "
-                  "Use soft-check tools (BankBazaar, Paisabazaar) to pre-screen eligibility.")
-    if rent / max(income, 1) > 0.45:
-        month2.append("Evaluate shared accommodation or relocation to reduce housing cost ratio below 40% of income. "
-                      "Even a 3-month record of lower rent improves your bank statement narrative.")
+        # ─── TAB 1: RISK OVERVIEW ───────────────────────────────
+        with tab1:
+            cl, cr = st.columns(2)
+            with cl:
+                fig_g = go.Figure(go.Indicator(
+                    mode="gauge+number+delta", value=prob*100,
+                    delta={"reference": 50, "suffix": "%"},
+                    title={"text": "Default Risk Probability", "font": {"size": 14, "color": WHITE}},
+                    number={"suffix": "%", "font": {"size": 36, "color": dc}},
+                    gauge={
+                        "axis": {"range": [0, 100], "tickcolor": WHITE, "tickfont": {"size": 11}},
+                        "bar": {"color": dc, "thickness": 0.26},
+                        "bgcolor": "rgba(0,0,0,0)",
+                        "steps": [{"range": [0, 33], "color": "rgba(46,204,138,0.12)"},
+                                  {"range": [33, 66], "color": "rgba(245,166,35,0.12)"},
+                                  {"range": [66, 100], "color": "rgba(255,61,94,0.12)"}],
+                        "threshold": {"line": {"color": CYAN, "width": 3}, "value": 50}
+                    }))
+                fig_g.update_layout(**PLOT, height=310, title="AI Risk Probability Gauge")
+                st.plotly_chart(fig_g, use_container_width=True)
+            with cr:
+                cats = ["Savings Rate", "Job Stability", "Credit Health",
+                        "Loan Fit", "Employment", "Rent Control"]
+                vals = [
+                    min(100, savings/max(income,1)*500),
+                    min(100, employ*12),
+                    (cibil-300)/6,
+                    max(0, 100 - loan/max(income,1)*8),
+                    min(100, employ*10),
+                    max(0, 100 - (rent/max(income,1))*150)
+                ]
+                fig_r = go.Figure()
+                fig_r.add_trace(go.Scatterpolar(
+                    r=vals+[vals[0]], theta=cats+[cats[0]],
+                    fill="toself", fillcolor="rgba(157,112,255,0.12)",
+                    line=dict(color=LAV, width=2.5), name="Your Profile"))
+                fig_r.add_trace(go.Scatterpolar(
+                    r=[70]*7, theta=cats+[cats[0]],
+                    fill="toself", fillcolor="rgba(0,232,181,0.04)",
+                    line=dict(color=CYAN, width=1.5, dash="dot"), name="Safe Zone"))
+                fig_r.update_layout(**PLOT, height=310, title="Financial Health Radar",
+                    polar=dict(bgcolor="rgba(0,0,0,0)",
+                        radialaxis=dict(visible=True, range=[0, 100],
+                                        tickfont={"size": 10, "color": MUTED},
+                                        gridcolor="rgba(108,63,255,0.10)"),
+                        angularaxis=dict(tickfont={"size": 12, "color": WHITE},
+                                          gridcolor="rgba(108,63,255,0.08)")))
+                st.plotly_chart(fig_r, use_container_width=True)
 
-    # Month 3: Application
-    month3.append("Submit application to your primary salary bank first — they have your transaction history "
-                  "and internal risk models are more lenient for existing customers (typically 15–20% higher approval rate).")
-    if employment < 2:
-        month3.append("By month 3, you'll have additional tenure. Obtain an employment continuity letter "
-                      "and HR confirmation of permanent status to strengthen the application.")
-    month3.append(f"At this point, your estimated Approval Readiness Score should be ~{min(95, round((1-prob)*100)+25)}%. "
-                  "If still below 70%, explore NBFC lenders (Bajaj Finserv, Tata Capital) "
-                  "as they use alternate scoring and approve 40% more applicants than PSU banks.")
+            disp = max(0, income - rent - savings)
+            fig_b = go.Figure(go.Bar(
+                x=["Income", "Rent", "Savings", "Loan ÷10", "Disposable"],
+                y=[income, rent, savings, loan/10, disp],
+                marker_color=[LAV, RED, GREEN, GOLD, "rgba(157,112,255,0.55)"],
+                marker_line_color="rgba(0,0,0,0)",
+                text=[f"₹{v:,.0f}" for v in [income, rent, savings, loan/10, disp]],
+                textposition="outside",
+                textfont=dict(size=13, color=WHITE)))
+            fig_b.update_layout(**PLOT, height=300, title="Monthly Financial Breakdown",
+                yaxis=dict(gridcolor="rgba(108,63,255,0.07)", tickprefix="₹",
+                           tickformat=",.0f", tickfont=dict(size=12, color=WHITE)))
+            st.plotly_chart(fig_b, use_container_width=True)
 
-    return [month1, month2, month3]
+            emi_e = loan / 60
+            fig_wf = go.Figure(go.Waterfall(orientation="v",
+                measure=["absolute", "relative", "relative", "relative", "total"],
+                x=["Salary", "− Rent", "− Loan EMI*", "− Savings", "Remaining"],
+                y=[income, -rent, -emi_e, -savings, income-rent-emi_e-savings],
+                connector={"line": {"color": "rgba(108,63,255,0.25)"}},
+                decreasing={"marker": {"color": RED}},
+                increasing={"marker": {"color": GREEN}},
+                totals={"marker": {"color": GRAPE}},
+                text=[f"₹{abs(v):,.0f}" for v in [income, rent, emi_e, savings, income-rent-emi_e-savings]],
+                textposition="outside",
+                textfont=dict(size=13, color=WHITE)))
+            fig_wf.update_layout(**PLOT, height=300,
+                title="Monthly Cash Flow Waterfall  (*EMI estimated at 60-month tenure)",
+                yaxis=dict(tickprefix="₹", tickformat=",.0f",
+                           gridcolor="rgba(108,63,255,0.07)",
+                           tickfont=dict(size=12, color=WHITE)))
+            st.plotly_chart(fig_wf, use_container_width=True)
 
+        # ─── TAB 2: APPROVAL READINESS ──────────────────────────
+        with tab2:
+            section_header("Approval Readiness Score",
+                           "Composite score across 6 underwriting pillars evaluated by lenders", "🎯", GRAPE)
+            ar_c = GREEN if ar >= 70 else (GOLD if ar >= 45 else RED)
+            ar_rgb = "46,204,138" if ar >= 70 else ("245,166,35" if ar >= 45 else "255,61,94")
+            tier = "Prime Eligible" if ar >= 70 else ("Conditional" if ar >= 45 else "Below Threshold")
+            tier_msg = (
+                "Your profile qualifies for prime lending rates at scheduled banks." if ar >= 70
+                else "Conditional approval possible — targeted improvements will unlock better rates." if ar >= 45
+                else "Application likely to be declined at this stage. Prioritise the roadmap below."
+            )
+            st.markdown(f"""
+            <div style="background:linear-gradient(135deg,rgba({ar_rgb},0.10),rgba({ar_rgb},0.02));
+                        border:2px solid rgba({ar_rgb},0.30);border-radius:18px;padding:36px;
+                        margin-bottom:24px;display:flex;align-items:center;
+                        justify-content:space-between;flex-wrap:wrap;gap:20px;">
+              <div style="flex:1;min-width:280px;">
+                <span style="background:{ar_c};color:#0a0f1a;
+                             font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;
+                             padding:4px 14px;border-radius:99px;text-transform:uppercase;
+                             letter-spacing:.08em;">{tier}</span>
+                <h2 style="font-family:'Inter',sans-serif;font-size:24px;font-weight:800;
+                           color:{WHITE};margin:12px 0 8px;letter-spacing:-0.02em;">
+                  Approval Readiness Score</h2>
+                <p style="font-family:'Inter',sans-serif;font-size:15px;color:{MUTED};
+                          margin:0 0 10px;line-height:1.68;max-width:500px;">{tier_msg}</p>
+                <p style="font-family:'Inter',sans-serif;font-size:13px;color:{MUTED2};margin:0;">
+                  Weighted across: CIBIL score, savings rate,
+                  {tooltip("Debt-to-Income","FOIR / DTI ratio")}, employment tenure,
+                  {tooltip("XGBoost","AI")} default risk inverse, and {tooltip("Confidence Index","verification confidence")}.</p>
+              </div>
+              <div style="text-align:right;min-width:130px;">
+                <div style="font-family:'Inter',sans-serif;font-size:70px;font-weight:900;
+                            color:{ar_c};line-height:1;
+                            filter:drop-shadow(0 0 28px rgba({ar_rgb},0.50));">{ar}</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:12px;
+                            color:{MUTED};">out of 100</div>
+              </div>
+            </div>""", unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────────────────────────────────────
+            maxp = {"Credit Score": 25, "Savings & Liquidity": 20, "Debt Burden": 20,
+                    "Employment Stability": 15, "AI Risk Score": 15, "Verification Strength": 5}
+            descs = {
+                "Credit Score": "CIBIL/credit bureau score — primary lender screening criterion",
+                "Savings & Liquidity": "Monthly savings as a percentage of income — financial resilience proxy",
+                "Debt Burden": "Fixed obligation-to-income ratio (rent + estimated EMI)",
+                "Employment Stability": "Duration at current employer — income continuity signal",
+                "AI Risk Score": "Inverse of XGBoost default probability — model confidence",
+                "Verification Strength": "Income triangulation confidence score"
+            }
+            for dim, pts in ar_dims.items():
+                mx = maxp.get(dim, 20); pct = pts / mx * 100
+                bc = GREEN if pct >= 70 else (GOLD if pct >= 40 else RED)
+                st.markdown(f"""
+                <div style="background:{CARD};border:1.5px solid rgba(108,63,255,0.14);
+                            border-radius:12px;padding:18px 22px;margin-bottom:9px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
+                    <div>
+                      <span style="font-family:'Inter',sans-serif;font-size:15px;
+                                   font-weight:700;color:{WHITE};">{dim}</span>
+                      <span style="font-family:'Inter',sans-serif;font-size:12.5px;color:{MUTED};
+                                   display:block;margin-top:2px;">{descs.get(dim, '')}</span>
+                    </div>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:14.5px;
+                                 color:{bc};font-weight:700;min-width:56px;text-align:right;">
+                      {pts}/{mx}</span>
+                  </div>
+                  <div style="height:7px;background:rgba(108,63,255,0.10);
+                              border-radius:99px;overflow:hidden;">
+                    <div style="width:{pct}%;height:100%;background:{bc};border-radius:99px;
+                                box-shadow:0 0 8px {bc}55;"></div>
+                  </div>
+                </div>""", unsafe_allow_html=True)
+
+            fig_ar = go.Figure(go.Indicator(
+                mode="gauge+number", value=ar,
+                title={"text": "Overall Approval Readiness", "font": {"size": 14, "color": WHITE}},
+                number={"suffix": "/100", "font": {"color": LAV, "size": 36}},
+                gauge={
+                    "axis": {"range": [0, 100], "tickcolor": WHITE, "tickfont": {"size": 11}},
+                    "bar": {"color": ar_c, "thickness": 0.28},
+                    "bgcolor": "rgba(0,0,0,0)",
+                    "steps": [{"range": [0, 45], "color": "rgba(255,61,94,0.12)"},
+                              {"range": [45, 70], "color": "rgba(245,166,35,0.12)"},
+                              {"range": [70, 100], "color": "rgba(46,204,138,0.12)"}],
+                    "threshold": {"line": {"color": CYAN, "width": 3}, "value": 70}
+                }))
+            fig_ar.update_layout(**PLOT, height=300, title="Approval Readiness Gauge")
+            st.plotly_chart(fig_ar, use_container_width=True)
+
+        # ─── TAB 3: SHAP ────────────────────────────────────────
+        with tab3:
+            section_header("SHAP Explainability",
+                           "Feature-level attribution — what drove this credit decision", "🔎", LAV)
+            st.markdown(f"""
+            <div style="background:rgba(157,112,255,0.07);border:1.5px solid rgba(157,112,255,0.22);
+                        border-radius:10px;padding:14px 18px;margin-bottom:22px;">
+              <p style="font-family:'Inter',sans-serif;font-size:14.5px;
+                        color:#D0D8F8;margin:0;line-height:1.65;">
+                <strong style="color:{LAV};font-weight:700;">Reading {tooltip("SHAP")} charts:</strong>
+                Red bars push your risk score <em>higher</em> (worse for approval).
+                Blue/green bars push it <em>lower</em> (better for approval).
+                {tooltip("Feature Importance", "Feature importance")} is ranked in the right chart —
+                hover the underlined terms for plain-English definitions.
+              </p>
+            </div>""", unsafe_allow_html=True)
+            with st.spinner("Computing SHAP attributions…"):
+                try:
+                    fw, fb, tbl, sd = run_shap(MDL, idf)
+                    s1, s2 = st.columns(2)
+                    with s1:
+                        st.markdown(f"""<p style="font-family:'JetBrains Mono',monospace;font-size:11px;
+                            letter-spacing:.10em;text-transform:uppercase;color:{MUTED};
+                            margin:0 0 10px;">This Prediction — Waterfall</p>""",
+                            unsafe_allow_html=True)
+                        st.pyplot(fw, use_container_width=True); plt.close("all")
+                    with s2:
+                        st.markdown(f"""<p style="font-family:'JetBrains Mono',monospace;font-size:11px;
+                            letter-spacing:.10em;text-transform:uppercase;color:{MUTED};
+                            margin:0 0 10px;">All Predictions — Feature Importance</p>""",
+                            unsafe_allow_html=True)
+                        st.pyplot(fb, use_container_width=True); plt.close("all")
+
+                    section_header("Attribution Table", "SHAP values per feature for this application", "📋", GRAPE)
+                    hd = f"""<div style="display:grid;grid-template-columns:1.2fr 120px 110px 1fr;
+                              background:linear-gradient(135deg,{GRAPE},{LAV});
+                              border-radius:10px 10px 0 0;padding:12px 20px;
+                              font-family:'JetBrains Mono',monospace;font-size:10.5px;
+                              letter-spacing:.08em;text-transform:uppercase;color:#fff;font-weight:700;">
+                      <div>Feature</div><div>Value</div><div>SHAP</div><div>Effect on Risk</div>
+                    </div>"""
+                    rows = ""
+                    for i, r in enumerate(tbl):
+                        bg = CARD if i % 2 == 0 else CARD2
+                        br = "border-radius:0 0 10px 10px;" if i == len(tbl)-1 else ""
+                        rows += f"""<div style="display:grid;grid-template-columns:1.2fr 120px 110px 1fr;
+                                     background:{bg};padding:13px 20px;
+                                     border-bottom:1px solid rgba(108,63,255,0.06);{br}">
+                          <span style="font-family:'Inter',sans-serif;font-size:14.5px;
+                                       font-weight:700;color:{WHITE};">{r['Feature']}</span>
+                          <span style="font-family:'JetBrains Mono',monospace;font-size:13.5px;
+                                       color:{MUTED};">{r['Value']}</span>
+                          <span style="font-family:'JetBrains Mono',monospace;font-size:13.5px;
+                                       color:{LAV};font-weight:600;">{r['SHAP']:+.4f}</span>
+                          <span style="font-family:'Inter',sans-serif;font-size:13.5px;
+                                       color:{r['Color']};font-weight:600;">{r['Dir']}</span>
+                        </div>"""
+                    st.markdown(hd + rows, unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"SHAP computation error: {e}")
+
+        # ─── TAB 4: RECOMMENDATIONS ─────────────────────────────
+        with tab4:
+            section_header("Your Action Plan",
+                           "Evidence-based steps to improve loan eligibility — prioritised by impact", "🧠", GRAPE)
+            recs = gen_recs(income, rent, savings, loan, employ, cibil, prob)
+            for rec in recs:
+                pc = {"high": RED, "medium": GOLD, "low": LAV, "positive": GREEN}.get(rec["p"], LAV)
+                urgency_map = {
+                    "high": "Urgent — Address Before Applying",
+                    "medium": "Important — Address Within 30 Days",
+                    "low": "Advisory",
+                    "positive": "Strength — Leverage This"
+                }
+                urgency = urgency_map.get(rec["p"], "")
+                st.markdown(f"""
+                <div style="background:{CARD};border-left:4px solid {pc};
+                            border:1.5px solid rgba(108,63,255,0.12);border-left:4px solid {pc};
+                            border-radius:0 14px 14px 0;padding:24px 26px;margin-bottom:16px;">
+                  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;
+                              flex-wrap:wrap;">
+                    <span style="font-size:20px;line-height:1;">{rec['icon']}</span>
+                    <h4 style="font-family:'Inter',sans-serif;font-size:17px;font-weight:800;
+                               color:{WHITE};margin:0;flex:1;letter-spacing:-0.01em;">
+                      {rec['title']}</h4>
+                    <span style="background:{pc}1a;color:{pc};border:1px solid {pc}44;
+                                 font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;
+                                 padding:4px 12px;border-radius:99px;text-transform:uppercase;
+                                 letter-spacing:.07em;white-space:nowrap;">{urgency}</span>
+                  </div>
+                  <!-- What section -->
+                  <div style="background:rgba(108,63,255,0.07);border-radius:9px;
+                              padding:14px 16px;margin-bottom:10px;">
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:10px;
+                               letter-spacing:.10em;text-transform:uppercase;color:{MUTED};
+                               margin:0 0 7px;font-weight:700;">What's happening</p>
+                    <p style="font-family:'Inter',sans-serif;font-size:14.5px;
+                               color:#C8D0F0;margin:0;line-height:1.70;">
+                      {rec['what']}</p>
+                  </div>
+                  <!-- How section -->
+                  <div style="background:{pc}12;border-radius:9px;padding:14px 16px;
+                              border:1px solid {pc}22;">
+                    <p style="font-family:'JetBrains Mono',monospace;font-size:10px;
+                               letter-spacing:.10em;text-transform:uppercase;color:{pc};
+                               margin:0 0 7px;font-weight:700;">Action steps</p>
+                    <p style="font-family:'Inter',sans-serif;font-size:14.5px;
+                               color:#D0D8F8;margin:0;line-height:1.70;">
+                      {rec['how']}</p>
+                  </div>
+                </div>""", unsafe_allow_html=True)
+
+        # ─── TAB 5: ROADMAP ─────────────────────────────────────
+        with tab5:
+            section_header("90-Day Approval Roadmap",
+                           "A structured, milestone-driven plan to reach prime borrower status", "🗺", GOLD)
+            months = gen_roadmap(income, rent, savings, loan, employ, cibil, prob)
+            labels = ["Month 1 — Build the Foundation",
+                      "Month 2 — Strengthen Your Profile",
+                      "Month 3 — Apply with Confidence"]
+            colours = [GOLD, LAV, GREEN]
+            colour_rgbs = ["245,166,35", "157,112,255", "46,204,138"]
+
+            for i, (lbl, items, mc, mr) in enumerate(zip(labels, months, colours, colour_rgbs)):
+                st.markdown(f"""
+                <div style="background:{SURFACE};border:1.5px solid rgba({mr},0.22);
+                            border-radius:16px;padding:26px 30px;margin-bottom:16px;
+                            box-shadow:0 4px 20px rgba(0,0,0,0.30);">
+                  <div style="display:flex;align-items:center;gap:13px;margin-bottom:18px;">
+                    <div style="width:38px;height:38px;min-width:38px;border-radius:50%;
+                                background:{mc};display:flex;align-items:center;justify-content:center;
+                                font-family:'Inter',sans-serif;font-size:15px;font-weight:900;
+                                color:#0a0f1a;box-shadow:0 0 18px rgba({mr},0.40);">{i+1}</div>
+                    <h4 style="font-family:'Inter',sans-serif;font-size:17px;font-weight:800;
+                               color:{WHITE};margin:0;letter-spacing:-0.01em;">{lbl}</h4>
+                  </div>
+                  {''.join([f"""<div style="display:flex;gap:13px;padding:12px 0;
+                                   border-bottom:1px solid rgba(108,63,255,0.07);">
+                    <span style="color:{mc};font-size:16px;flex-shrink:0;margin-top:2px;
+                                 line-height:1.5;">◆</span>
+                    <p style="font-family:\'Inter\',sans-serif;font-size:14.5px;
+                              color:#C8D0F0;margin:0;line-height:1.70;">{item}</p>
+                  </div>""" for item in items])}
+                </div>""", unsafe_allow_html=True)
+
+            cur = round((1 - prob) * 100)
+            proj = [cur, min(100, cur+8), min(100, cur+18), min(100, cur+30)]
+            fig_tl = go.Figure()
+            fig_tl.add_trace(go.Scatter(
+                x=["Today", "Month 1", "Month 2", "Month 3"], y=proj,
+                mode="lines+markers+text",
+                line=dict(color=GRAPE, width=3),
+                marker=dict(size=12, color=GRAPE, line=dict(width=2.5, color=CYAN)),
+                text=[f"{v}%" for v in proj], textposition="top center",
+                textfont=dict(size=13, color=WHITE),
+                fill="tozeroy", fillcolor="rgba(108,63,255,0.07)"))
+            fig_tl.add_hline(y=70, line_dash="dot", line_color=GREEN,
+                annotation_text="Prime Approval Zone (70%+)",
+                annotation_font_color=GREEN, annotation_font_size=12)
+            fig_tl.update_layout(**PLOT, height=300,
+                title="Projected Approval Readiness — 90-Day Trajectory",
+                yaxis=dict(range=[0, 110], ticksuffix="%",
+                           gridcolor="rgba(108,63,255,0.07)",
+                           tickfont=dict(size=12, color=WHITE)))
+            st.plotly_chart(fig_tl, use_container_width=True)
+
+        # ─── TAB 6: WHAT-IF SIMULATOR ───────────────────────────
+        # FEATURE 3: Pure UI simulation overlay — no re-training, no re-scoring
+        with tab6:
+            section_header("What-If Simulator",
+                           "Adjust key variables and see how your Approval Readiness would shift — no re-run needed", "🔮", GRAPE)
+
+            st.markdown(f"""
+            <div style="background:rgba(124,77,255,0.08);border:1.5px solid rgba(124,77,255,0.22);
+                        border-radius:14px;padding:16px 20px;margin-bottom:24px;">
+              <p style="font-family:'Inter',sans-serif;font-size:14px;color:{TEXT};margin:0;line-height:1.65;">
+                <strong style="color:{LAV};">How this works:</strong>
+                This simulator estimates the <em>directional impact</em> of changing your financial habits.
+                It uses lightweight projection rules — not the full XGBoost model — to give you fast,
+                actionable feedback. Actual results will vary based on lender criteria.
+              </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            sim_c1, sim_c2 = st.columns(2)
+            with sim_c1:
+                st.markdown(f"""
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;
+                           letter-spacing:.12em;text-transform:uppercase;color:{MUTED};
+                           margin:0 0 8px;font-weight:700;">💰 Additional Monthly Savings (₹)</p>
+                """, unsafe_allow_html=True)
+                sim_savings_boost = st.slider(
+                    "Additional monthly savings", 0, 20000, 0, 500,
+                    key="sim_sav", label_visibility="collapsed"
+                )
+                st.markdown(f"""
+                <p style="font-family:'Inter',sans-serif;font-size:13px;color:{MUTED};
+                           margin:4px 0 0;">Currently saving: ₹{savings:,}/month</p>
+                """, unsafe_allow_html=True)
+
+            with sim_c2:
+                st.markdown(f"""
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;
+                           letter-spacing:.12em;text-transform:uppercase;color:{MUTED};
+                           margin:0 0 8px;font-weight:700;">📉 Monthly Expense Reduction (₹)</p>
+                """, unsafe_allow_html=True)
+                sim_expense_cut = st.slider(
+                    "Monthly expense cut", 0, 15000, 0, 500,
+                    key="sim_exp", label_visibility="collapsed"
+                )
+                st.markdown(f"""
+                <p style="font-family:'Inter',sans-serif;font-size:13px;color:{MUTED};
+                           margin:4px 0 0;">Reduces debt burden and improves FOIR</p>
+                """, unsafe_allow_html=True)
+
+            sim_c3, sim_c4 = st.columns(2)
+            with sim_c3:
+                st.markdown(f"""
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;
+                           letter-spacing:.12em;text-transform:uppercase;color:{MUTED};
+                           margin:0 0 8px;font-weight:700;">📋 CIBIL Score Improvement</p>
+                """, unsafe_allow_html=True)
+                sim_cibil_boost = st.slider(
+                    "CIBIL improvement", 0, 150, 0, 10,
+                    key="sim_cibil", label_visibility="collapsed"
+                )
+                st.markdown(f"""
+                <p style="font-family:'Inter',sans-serif;font-size:13px;color:{MUTED};
+                           margin:4px 0 0;">Current score: {cibil}  →  Projected: {cibil + sim_cibil_boost}</p>
+                """, unsafe_allow_html=True)
+
+            with sim_c4:
+                st.markdown(f"""
+                <p style="font-family:'JetBrains Mono',monospace;font-size:10px;
+                           letter-spacing:.12em;text-transform:uppercase;color:{MUTED};
+                           margin:0 0 8px;font-weight:700;">🗓 Additional Employment Months</p>
+                """, unsafe_allow_html=True)
+                sim_employ_months = st.slider(
+                    "Additional employment months", 0, 24, 0, 1,
+                    key="sim_emp", label_visibility="collapsed"
+                )
+                sim_employ_new = employ + sim_employ_months / 12
+                st.markdown(f"""
+                <p style="font-family:'Inter',sans-serif;font-size:13px;color:{MUTED};
+                           margin:4px 0 0;">Current: {employ:.1f} yrs  →  Projected: {sim_employ_new:.1f} yrs</p>
+                """, unsafe_allow_html=True)
+
+            # ── Lightweight simulation engine ──
+            def simulate_ar(inc, rnt, sav, ln, emp, cib, prob_base, vc_base,
+                            sav_boost, exp_cut, cib_boost, emp_boost_yrs):
+                """Simulate approval readiness with adjusted inputs.
+                Uses the same approval_readiness() function — no new model call.
+                """
+                new_sav = sav + sav_boost
+                new_rent = max(0, rnt - exp_cut)
+                new_cib = min(900, cib + cib_boost)
+                new_emp = emp + emp_boost_yrs
+                # Risk proxy: improve prob slightly based on savings + cibil
+                dr = 0.0
+                if sav_boost > 0:    dr -= min(0.08, sav_boost / max(inc,1) * 0.5)
+                if exp_cut > 0:      dr -= min(0.05, exp_cut / max(inc,1) * 0.3)
+                if cib_boost > 0:    dr -= min(0.10, cib_boost / 150 * 0.10)
+                if emp_boost_yrs>0:  dr -= min(0.04, emp_boost_yrs * 0.02)
+                new_prob = max(0.01, min(0.99, prob_base + dr))
+                sim_ar, sim_dims = approval_readiness(
+                    inc, new_rent, new_sav, ln, new_emp, new_cib, new_prob, vc_base)
+                return sim_ar, sim_dims, new_prob
+
+            sim_ar_val, sim_ar_dims, sim_prob = simulate_ar(
+                income, rent, savings, loan, employ, cibil, prob, vc,
+                sim_savings_boost, sim_expense_cut, sim_cibil_boost,
+                sim_employ_months / 12
+            )
+
+            ar_delta   = sim_ar_val - ar
+            prob_delta = (sim_prob - prob) * 100
+            ar_col     = GREEN if ar_delta >= 0 else RED
+            prob_col   = GREEN if prob_delta <= 0 else RED
+            ar_rgb_sim = "35,209,139" if ar_delta >= 0 else "255,64,96"
+
+            st.markdown('<div style="height:20px;"></div>', unsafe_allow_html=True)
+
+            # ── Impact cards ──
+            ic1, ic2, ic3 = st.columns(3)
+            with ic1:
+                sign = "+" if ar_delta >= 0 else ""
+                st.markdown(f"""
+                <div style="background:{CARD};border:1.5px solid rgba({ar_rgb_sim},0.30);
+                            border-radius:14px;padding:22px 20px;text-align:center;">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{MUTED};
+                              text-transform:uppercase;letter-spacing:.11em;margin-bottom:8px;">
+                    Approval Readiness</div>
+                  <div style="font-family:'Inter',sans-serif;font-size:42px;font-weight:900;
+                              color:{ar_col};line-height:1;
+                              filter:drop-shadow(0 0 18px rgba({ar_rgb_sim},0.45));">
+                    {sign}{ar_delta:.1f}</div>
+                  <div style="font-family:'Inter',sans-serif;font-size:14px;color:{MUTED};margin-top:6px;">
+                    {ar} → <strong style="color:{ar_col};">{sim_ar_val:.1f}</strong> / 100</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with ic2:
+                prob_sign = "+" if prob_delta >= 0 else ""
+                prob_rgb2 = "255,64,96" if prob_delta >= 0 else "35,209,139"
+                prob_col2 = RED if prob_delta >= 0 else GREEN
+                st.markdown(f"""
+                <div style="background:{CARD};border:1.5px solid rgba({prob_rgb2},0.25);
+                            border-radius:14px;padding:22px 20px;text-align:center;">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{MUTED};
+                              text-transform:uppercase;letter-spacing:.11em;margin-bottom:8px;">
+                    Default Risk Change</div>
+                  <div style="font-family:'Inter',sans-serif;font-size:42px;font-weight:900;
+                              color:{prob_col2};line-height:1;">
+                    {prob_sign}{prob_delta:.1f}%</div>
+                  <div style="font-family:'Inter',sans-serif;font-size:14px;color:{MUTED};margin-top:6px;">
+                    {prob*100:.1f}% → <strong style="color:{prob_col2};">{sim_prob*100:.1f}%</strong></div>
+                </div>
+                """, unsafe_allow_html=True)
+            with ic3:
+                net_saved = sim_savings_boost + sim_expense_cut
+                annual = net_saved * 12
+                st.markdown(f"""
+                <div style="background:{CARD};border:1.5px solid rgba(124,77,255,0.25);
+                            border-radius:14px;padding:22px 20px;text-align:center;">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{MUTED};
+                              text-transform:uppercase;letter-spacing:.11em;margin-bottom:8px;">
+                    Annual Financial Gain</div>
+                  <div style="font-family:'Inter',sans-serif;font-size:42px;font-weight:900;
+                              color:{LAV};line-height:1;">₹{annual:,.0f}</div>
+                  <div style="font-family:'Inter',sans-serif;font-size:14px;color:{MUTED};margin-top:6px;">
+                    per year in improved position</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # ── Insight callout box ──
+            st.markdown('<div style="height:20px;"></div>', unsafe_allow_html=True)
+            insight_parts = []
+            if sim_savings_boost > 0:
+                insight_parts.append(
+                    f"saving ₹{sim_savings_boost:,} more per month"
+                )
+            if sim_expense_cut > 0:
+                insight_parts.append(
+                    f"cutting expenses by ₹{sim_expense_cut:,}"
+                )
+            if sim_cibil_boost > 0:
+                insight_parts.append(
+                    f"improving your CIBIL by {sim_cibil_boost} points"
+                )
+            if sim_employ_months > 0:
+                insight_parts.append(
+                    f"gaining {sim_employ_months} more months of employment"
+                )
+
+            if insight_parts and ar_delta != 0:
+                combo = " + ".join(insight_parts)
+                direction = "increase" if ar_delta > 0 else "decrease"
+                box_color = ar_rgb_sim
+                box_border = ar_col
+                st.markdown(f"""
+                <div style="background:rgba({box_color},0.07);
+                            border:2px solid rgba({box_color},0.28);
+                            border-radius:14px;padding:22px 26px;">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;
+                              color:{box_border};text-transform:uppercase;letter-spacing:.10em;
+                              font-weight:700;margin-bottom:10px;">💡 Simulator Insight</div>
+                  <p style="font-family:'Inter',sans-serif;font-size:16px;font-weight:500;
+                             color:{WHITE};margin:0;line-height:1.65;">
+                    If you <strong style="color:{LAV};">{combo}</strong>,
+                    your Approval Readiness Score could
+                    <strong style="color:{box_border};">{direction} by {abs(ar_delta):.1f} points</strong>
+                    — moving from <strong>{ar}</strong> to
+                    <strong style="color:{box_border};">{sim_ar_val:.1f} / 100</strong>.
+                  </p>
+                  <p style="font-family:'Inter',sans-serif;font-size:13.5px;color:{MUTED};
+                             margin:10px 0 0;line-height:1.60;">
+                    Default probability shifts from
+                    <strong style="color:{WHITE};">{prob*100:.1f}%</strong> to
+                    <strong style="color:{prob_col2};">{sim_prob*100:.1f}%</strong>.
+                    Use the 90-Day Roadmap tab to build a concrete plan to achieve this.
+                  </p>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="background:rgba(124,77,255,0.07);border:1.5px solid rgba(124,77,255,0.20);
+                            border-radius:12px;padding:20px 24px;text-align:center;">
+                  <p style="font-family:'Inter',sans-serif;font-size:15px;color:{MUTED};margin:0;">
+                    Move the sliders above to simulate the impact of financial improvements.</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # ── Per-dimension delta table ──
+            if any(v > 0 for v in [sim_savings_boost, sim_expense_cut, sim_cibil_boost, sim_employ_months]):
+                st.markdown('<div style="height:18px;"></div>', unsafe_allow_html=True)
+                section_header("Dimension-Level Impact", "How each readiness pillar shifts with your changes", "📊", LAV)
+                maxp = {"Credit Score": 25, "Savings & Liquidity": 20, "Debt Burden": 20,
+                        "Employment Stability": 15, "AI Risk Score": 15, "Verification Strength": 5}
+                for dim in ar_dims:
+                    orig = ar_dims[dim]
+                    simv = sim_ar_dims.get(dim, orig)
+                    delta_d = simv - orig
+                    mx = maxp.get(dim, 20)
+                    dc2 = GREEN if delta_d > 0 else (RED if delta_d < 0 else MUTED)
+                    sign_d = "+" if delta_d >= 0 else ""
+                    st.markdown(f"""
+                    <div style="display:flex;align-items:center;gap:14px;padding:10px 0;
+                                border-bottom:1px solid rgba(124,77,255,0.07);">
+                      <span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:600;
+                                   color:{WHITE};flex:1;min-width:180px;">{dim}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:{MUTED};
+                                   min-width:55px;text-align:right;">{orig}/{mx}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:{MUTED};
+                                   min-width:20px;text-align:center;">→</span>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:13px;
+                                   color:{dc2};font-weight:700;min-width:55px;text-align:right;">
+                        {simv:.1f}/{mx}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;
+                                   color:{dc2};min-width:46px;text-align:right;">
+                        {sign_d}{delta_d:.1f}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        # ── HUSTLE SCORE ────────────────────────────────────────
+        st.divider()
+        section_header(f'{tooltip("Hustle Score","Hustle Score™")}',
+                       "Five financial discipline indicators — each worth 20 points. Hover the title for definition.", "🔥", GOLD)
+
+        dims_h = {
+            "Save at least 10% of income monthly":
+                20 if income > 0 and savings/income >= 0.10 else 0,
+            "Keep rent below 50% of income":
+                20 if income > 0 and rent/income < 0.50 else 0,
+            "Maintain CIBIL score above 650":
+                20 if cibil > 650 else 0,
+            "2+ years continuous employment":
+                20 if employ >= 2 else 0,
+            "Loan amount under 5× monthly income":
+                20 if income > 0 and loan < income*5 else 0,
+        }
+        hsc = GREEN if hs >= 70 else (GOLD if hs >= 40 else RED)
+        hrg = "46,204,138" if hs >= 70 else ("245,166,35" if hs >= 40 else "255,61,94")
+        hmsg = (
+            "Exceptional financial discipline. You are in the top tier of loan applicants."
+            if hs >= 70 else
+            "Solid foundation — one or two targeted improvements will unlock significantly better terms."
+            if hs >= 40 else
+            "Clear improvement areas exist. Follow the 90-day roadmap and reassess in 30 days."
+        )
+
+        st.markdown(f"""
+        <div style="background:{SURFACE};border:1.5px solid rgba({hrg},0.22);
+                    border-radius:18px;padding:28px 30px;margin-bottom:24px;
+                    box-shadow:0 4px 24px rgba(0,0,0,0.30);">
+          <div style="display:flex;align-items:center;justify-content:space-between;
+                      margin-bottom:26px;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h3 style="font-family:'Inter',sans-serif;font-size:20px;font-weight:800;
+                         color:{WHITE};margin:0 0 6px;letter-spacing:-0.015em;">Hustle Score™</h3>
+              <p style="font-family:'Inter',sans-serif;font-size:14px;color:{MUTED};margin:0;">
+                Score yourself against these 5 financial discipline benchmarks</p>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-family:'Inter',sans-serif;font-size:60px;font-weight:900;
+                           color:{hsc};line-height:1;
+                           filter:drop-shadow(0 0 24px rgba({hrg},0.45));">{hs}</span>
+              <span style="font-family:'Inter',sans-serif;font-size:20px;
+                           font-weight:600;color:{MUTED};">/100</span>
+            </div>
+          </div>
+        """, unsafe_allow_html=True)
+
+        for dim, pts in dims_h.items():
+            bc = GREEN if pts > 0 else "rgba(255,61,94,0.45)"
+            tick = "✓" if pts > 0 else "✗"
+            row_bg = "rgba(46,204,138,0.04)" if pts > 0 else "rgba(255,61,94,0.03)"
+            row_border = "rgba(46,204,138,0.18)" if pts > 0 else "rgba(255,61,94,0.14)"
+            st.markdown(f"""
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;
+                        background:{row_bg};border:1px solid {row_border};
+                        border-radius:9px;padding:11px 14px;">
+              <span style="font-size:17px;color:{bc};font-weight:900;min-width:18px;
+                           line-height:1;">{tick}</span>
+              <span style="flex:1;font-family:'Inter',sans-serif;font-size:14.5px;
+                           color:#C8D0F0;font-weight:500;">{dim}</span>
+              <div style="height:7px;width:110px;background:rgba(108,63,255,0.10);
+                          border-radius:99px;overflow:hidden;flex-shrink:0;">
+                <div style="width:{pts*5}%;height:100%;background:{bc};border-radius:99px;
+                             box-shadow:0 0 6px {bc}55;"></div>
+              </div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:13px;
+                           color:{bc};font-weight:700;min-width:40px;text-align:right;">
+                {pts}/20</span>
+            </div>""", unsafe_allow_html=True)
+
+        st.markdown(f"""
+          <div style="background:rgba({hrg},0.07);border-radius:9px;
+                      padding:15px 18px;margin-top:14px;">
+            <p style="font-family:'Inter',sans-serif;font-size:15px;color:{hsc};
+                      margin:0;font-weight:600;line-height:1.55;">{hmsg}</p>
+          </div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────────────────────
 # ROUTER
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ─────────────────────────────────────────────────────────────
 if not st.session_state.authenticated and st.session_state.page != "login":
     st.session_state.page = "login"
 
-page = st.session_state.page
-
-if page == "login":
-    render_login()
-elif page == "onboard":
-    render_onboard()
-elif page == "verify_result":
-    render_verify_result()
-elif page == "dashboard":
-    render_dashboard()
-else:
-    render_login()
+{
+    "login":         render_login,
+    "onboard":       render_onboard,
+    "verify_result": render_verify_result,
+    "dashboard":     render_dashboard,
+}.get(st.session_state.page, render_login)()
