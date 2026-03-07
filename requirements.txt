@@ -12,3 +12,4 @@ streamlit-authenticator
 opencv-python
 pytesseract
 pdf2image
+reportlab

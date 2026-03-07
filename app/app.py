@@ -14,8 +14,14 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import hashlib, time, json, os
+import hashlib, time, json, os, io, base64
 from datetime import datetime
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
 
 # ─────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -131,7 +137,7 @@ def db_save(uid, d):
 for k, v in {
     "page": "login", "authenticated": False,
     "username": "", "user_id": None, "plan": "Pro",
-    "vr": None, "ud": {}, "attempts": 0
+    "vr": None, "ud": {}, "attempts": 0, "tf_result": None
 }.items():
     if k not in st.session_state:
         st.session_state[k] = v
@@ -1675,7 +1681,17 @@ def render_dashboard():
     r2 = st.columns(3)
     with r2[0]: loan = st.number_input("Loan Amount Requested (₹)", min_value=0, step=5000, key="d_loan")
     with r2[1]: employ = st.number_input("Years at Current Job", min_value=0.0, step=0.5, key="d_emp")
-    with r2[2]: cibil = st.number_input("CIBIL / Credit Score", 300, 900, value=700, key="d_cibil")
+    with r2[2]:
+        cibil = st.number_input("CIBIL / Credit Score", 300, 900, value=700, key="d_cibil")
+        st.markdown(
+            f'<div style="margin-top:4px;">'
+            f'<span style="font-family:JetBrains Mono,monospace;font-size:10px;'
+            f'color:{MUTED};letter-spacing:.04em;">No credit history? →</span>'
+            f'</div>', unsafe_allow_html=True)
+        if st.button("🔍 Analyse as Thin File", key="btn_thinfile",
+                     help="No CIBIL score? Use our Behavioral Underwriting engine instead."):
+            st.session_state.page = "thin_file"
+            st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
     run = st.button("Run AI Credit Analysis  →", key="btn_run")
@@ -2500,7 +2516,598 @@ def render_dashboard():
           </div>
         </div>""", unsafe_allow_html=True)
 
+    # ── DOWNLOAD REPORT BUTTON ────────────────────────────────────
+    if "dash_result" in st.session_state:
+        st.markdown('<div style="height:24px;"></div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,rgba(124,77,255,0.10),rgba(0,229,192,0.06));
+                    border:1.5px solid rgba(124,77,255,0.28);border-radius:16px;
+                    padding:24px 30px;display:flex;align-items:center;
+                    justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:8px;">
+          <div>
+            <div style="font-family:'Inter',sans-serif;font-size:16px;font-weight:800;
+                        color:{WHITE};margin-bottom:4px;letter-spacing:-0.01em;">
+              📄 Full Credit Analysis Report</div>
+            <div style="font-family:'Inter',sans-serif;font-size:13px;color:{MUTED};">
+              Complete PDF — AI verdict · income verification · SHAP insights ·
+              recommendations · 90-day roadmap</div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+        col_dl, col_gap = st.columns([1, 3])
+        with col_dl:
+            with st.spinner("Generating PDF…"):
+                pdf_bytes = generate_pdf_report(
+                    st.session_state["dash_result"],
+                    st.session_state.get("ud", {}),
+                    st.session_state.get("username", "User"),
+                    st.session_state.get("plan", "Pro"),
+                )
+            fname = f"WalletWarriors_CreditReport_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+            st.download_button(
+                label="⬇ Download PDF Report",
+                data=pdf_bytes,
+                file_name=fname,
+                mime="application/pdf",
+                key="btn_pdf",
+            )
+
     st.markdown("</div>", unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────────────────────
+# ██  THIN FILE — BEHAVIORAL UNDERWRITING  ██
+# ─────────────────────────────────────────────────────────────
+def render_thin_file():
+    render_nav()
+    st.markdown(f'<div style="padding:24px 48px 40px;background:{BG};">', unsafe_allow_html=True)
+
+    # ── Hero header ──
+    st.markdown(f"""
+    <div style="background:linear-gradient(135deg,rgba(124,77,255,0.12),rgba(0,229,192,0.06));
+                border:1.5px solid rgba(124,77,255,0.28);border-radius:18px;
+                padding:28px 32px;margin-bottom:28px;">
+      <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+        <div style="font-size:36px;line-height:1;">🕵️</div>
+        <div style="flex:1;min-width:260px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+                      color:{CYAN};letter-spacing:.14em;text-transform:uppercase;
+                      margin-bottom:8px;">Thin File · Behavioral Underwriting Engine</div>
+          <h1 style="font-family:'Inter',sans-serif;font-size:26px;font-weight:900;
+                     color:{WHITE};margin:0 0 10px;letter-spacing:-0.025em;">
+            No CIBIL Score? We See Your Integrity.</h1>
+          <p style="font-family:'Inter',sans-serif;font-size:14px;color:{TEXT};
+                    margin:0;line-height:1.70;max-width:680px;">
+            Our AI acts as a <strong style="color:{LAV};">Financial Detective</strong> — reconstructing
+            your reliability through daily cash flow, bill payments and skill signals.
+            A student or gig worker with <em>consistent behaviour</em> beats a dormant credit card holder.
+            <strong style="color:{CYAN};">Consistency is impossible to fake.</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Section A: Stability ──
+    panel_open("A — Stability", "Income & recurring commitment proofs",
+               "UPI inflows, utility bills and rent prove that money enters and obligations are met — month after month.")
+    ca1, ca2, ca3 = st.columns(3)
+    with ca1: tf_income = st.number_input("Avg Monthly Inflow (₹)", min_value=0, step=500,
+                                           help="Sum of stipends, gig pay, freelance credits last 6 months ÷ 6",
+                                           key="tf_income")
+    with ca2: tf_rent   = st.number_input("Monthly Rent / EMI (₹)", min_value=0, step=500, key="tf_rent")
+    with ca3: tf_elec   = st.number_input("Avg Monthly Electricity Bill (₹)", min_value=0, step=50,
+                                           help="Average of last 12 months bills", key="tf_elec")
+    ca4, ca5, ca6 = st.columns(3)
+    with ca4: tf_upi    = st.number_input("Monthly UPI / Digital Spend (₹)", min_value=0, step=500, key="tf_upi")
+    with ca5: tf_bills_ontime = st.selectbox("Utility Bills Paid On Time",
+                                              ["Always (12/12 months)", "Mostly (9–11/12)", "Sometimes (6–8/12)", "Rarely (<6/12)"],
+                                              key="tf_bills")
+    with ca6: tf_rent_months = st.number_input("Months at Current Address", min_value=0, max_value=120,
+                                                step=1, help="Longer tenure = higher stability signal", key="tf_rent_mo")
+    panel_close()
+
+    # ── Section B: Skill ──
+    panel_open("B — Skill", "Future earning potential signals",
+               "Offer letters, certificates and education prove upward trajectory — your income will grow.")
+    cb1, cb2 = st.columns(2)
+    with cb1:
+        tf_employment = st.selectbox("Current Employment Status",
+            ["Employed Full-Time", "Gig / Freelance", "Internship / Trainee",
+             "Student (Final Year)", "Student (Other)", "Unemployed / Between Jobs"],
+            key="tf_emp_status")
+        tf_emp_months = st.number_input("Months in Current Role / Internship", min_value=0, step=1, key="tf_emp_mo")
+    with cb2:
+        tf_offer = st.selectbox("Confirmed Offer / Next Role",
+            ["Yes — Full-time offer letter in hand", "Yes — Internship start date confirmed",
+             "In progress — Interview at final stage", "No — Not applicable"],
+            key="tf_offer")
+        tf_certs = st.number_input("No. of Professional Certificates (last 2 yrs)",
+                                    min_value=0, max_value=20, step=1,
+                                    help="Coursera, NPTEL, hackathon wins, LinkedIn Learning etc.", key="tf_certs")
+    tf_doc_skill = st.file_uploader(
+        "Upload Offer Letter / Certificate / College ID (PDF · PNG · JPG) — optional",
+        type=["pdf","png","jpg","jpeg"], key="tf_doc_skill")
+    panel_close()
+
+    # ── Section C: Surplus ──
+    panel_open("C — Surplus", "Savings mindset & spending discipline",
+               "Even ₹500/month SIPs or consistent bank balance above zero signals a savings-first mindset.",
+               border_color=BORDER2)
+    cc1, cc2, cc3 = st.columns(3)
+    with cc1: tf_savings    = st.number_input("Monthly Savings / SIP (₹)", min_value=0, step=200, key="tf_sav")
+    with cc2: tf_avg_bal    = st.number_input("Avg Bank Balance — Last 3 Months (₹)", min_value=0, step=1000, key="tf_bal")
+    with cc3: tf_spend_type = st.selectbox("Primary Spending Category",
+                                            ["Essentials (rent, food, transport, bills)",
+                                             "Mixed (essentials + occasional leisure)",
+                                             "Discretionary-heavy (dining, subscriptions, shopping)"],
+                                            key="tf_spend")
+    cc4, cc5 = st.columns(2)
+    with cc4: tf_loan_req   = st.number_input("Loan Amount Requested (₹)", min_value=0, step=5000, key="tf_loan")
+    with cc5: tf_purpose    = st.selectbox("Purpose of Loan",
+                                            ["Education / Skill Upgrade", "Business / Freelance Setup",
+                                             "Emergency / Medical", "Asset Purchase (laptop/tools)",
+                                             "Personal / Consumer"],
+                                            key="tf_purpose")
+    panel_close()
+
+    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+
+    if st.button("Run Behavioral Underwriting  →", key="btn_tf_run"):
+        if tf_income == 0:
+            st.warning("Please enter your average monthly inflow to continue.")
+        else:
+            with st.spinner("🔍 Financial Detective at work — triangulating behavioural signals…"):
+                time.sleep(1.1)
+
+                # ── Score each dimension (0–20 each, total /100) ──
+                # 1. Income velocity
+                vel_score = 20 if tf_income >= 25000 else (15 if tf_income >= 12000 else (10 if tf_income >= 5000 else 5))
+
+                # 2. Bill discipline
+                bill_map = {"Always (12/12 months)": 20, "Mostly (9–11/12)": 14,
+                            "Sometimes (6–8/12)": 7, "Rarely (<6/12)": 2}
+                bill_score = bill_map.get(tf_bills_ontime, 7)
+
+                # 3. Stability (rent tenure + UPI consistency)
+                stab_score = min(20, int(tf_rent_months / 6) * 4 + (6 if tf_upi > 0 else 0))
+
+                # 4. Skill / employment
+                emp_map = {"Employed Full-Time": 20, "Gig / Freelance": 14,
+                           "Internship / Trainee": 12, "Student (Final Year)": 16,
+                           "Student (Other)": 10, "Unemployed / Between Jobs": 4}
+                skill_score = min(20, emp_map.get(tf_employment, 10) + min(4, tf_certs))
+
+                # 5. Surplus / savings discipline
+                sav_ratio = tf_savings / max(tf_income, 1)
+                surp_score = 20 if sav_ratio >= 0.15 else (14 if sav_ratio >= 0.07 else (7 if tf_savings > 0 else 2))
+                spend_pen = {"Essentials (rent, food, transport, bills)": 0,
+                             "Mixed (essentials + occasional leisure)": -2,
+                             "Discretionary-heavy (dining, subscriptions, shopping)": -5}
+                surp_score = max(0, surp_score + spend_pen.get(tf_spend_type, 0))
+
+                hustle_tf = vel_score + bill_score + stab_score + skill_score + surp_score
+
+                # ── Synthesise a CIBIL proxy (350–750 range for thin files) ──
+                cibil_proxy = int(350 + hustle_tf * 4.0)
+                cibil_proxy = min(cibil_proxy, 750)
+
+                # ── Run XGBoost with proxy score ──
+                idf = pd.DataFrame({
+                    "Income": [tf_income], "Rent": [tf_rent],
+                    "Savings": [tf_savings], "LoanAmount": [tf_loan_req],
+                    "Employment": [tf_emp_months / 12],
+                    "CreditScore": [cibil_proxy]
+                })
+                prob = float(MDL.predict_proba(idf)[0][1])
+                dec = "rejected" if prob > 0.55 else "approved"
+
+                # ── Offer letter / confirmed role boosts confidence ──
+                if "offer letter" in tf_offer.lower() or "confirmed" in tf_offer.lower():
+                    prob = max(0.05, prob - 0.12)
+                    dec = "rejected" if prob > 0.55 else "approved"
+
+                # ── Triangulate income vs UPI+elec ──
+                implied = tf_upi + tf_elec + tf_rent
+                coherence_gap = abs(tf_income - implied) / max(tf_income, 1)
+                coherent = coherence_gap < 0.45
+                confidence = max(40, 100 - int(coherence_gap * 80))
+
+                # ── Approval readiness using proxy ──
+                ar, ar_dims = approval_readiness(tf_income, tf_rent, tf_savings,
+                                                  tf_loan_req, tf_emp_months/12,
+                                                  cibil_proxy, prob, confidence)
+
+                st.session_state["tf_result"] = {
+                    "income": tf_income, "rent": tf_rent, "savings": tf_savings,
+                    "loan": tf_loan_req, "elec": tf_elec, "upi": tf_upi,
+                    "emp_status": tf_employment, "emp_months": tf_emp_months,
+                    "offer": tf_offer, "certs": tf_certs, "avg_bal": tf_avg_bal,
+                    "spend_type": tf_spend_type, "purpose": tf_purpose,
+                    "bills_ontime": tf_bills_ontime, "rent_months": tf_rent_months,
+                    "vel_score": vel_score, "bill_score": bill_score,
+                    "stab_score": stab_score, "skill_score": skill_score,
+                    "surp_score": surp_score, "hustle_tf": hustle_tf,
+                    "cibil_proxy": cibil_proxy, "prob": prob, "dec": dec,
+                    "coherent": coherent, "confidence": confidence,
+                    "ar": ar, "ar_dims": ar_dims,
+                }
+
+    # ── Results ──
+    if st.session_state.get("tf_result"):
+        r = st.session_state["tf_result"]
+        dec_color = GREEN if r["dec"] == "approved" else RED
+        dec_label = "✓  BEHAVIOURAL PROFILE — CREDITWORTHY" if r["dec"] == "approved" else "⚠  PROFILE NEEDS STRENGTHENING"
+
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,rgba({('46,204,138' if r['dec']=='approved' else '255,61,94')},0.10),transparent);
+                    border:2px solid {dec_color};border-radius:18px;
+                    padding:28px 32px;margin:20px 0 24px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+                      color:{dec_color};letter-spacing:.14em;text-transform:uppercase;
+                      margin-bottom:10px;">{dec_label}</div>
+          <div style="display:flex;align-items:flex-end;gap:40px;flex-wrap:wrap;">
+            <div><div style="font-family:'Inter',sans-serif;font-size:12px;color:{MUTED};
+                             margin-bottom:4px;">Hustle Consistency Score™</div>
+                 <span style="font-family:'Inter',sans-serif;font-size:52px;font-weight:900;
+                              color:{dec_color};line-height:1;">{r['hustle_tf']}</span>
+                 <span style="font-family:'Inter',sans-serif;font-size:18px;color:{MUTED};">/100</span>
+            </div>
+            <div><div style="font-family:'Inter',sans-serif;font-size:12px;color:{MUTED};margin-bottom:4px;">CIBIL Proxy Score</div>
+                 <span style="font-family:'Inter',sans-serif;font-size:36px;font-weight:800;color:{LAV};">{r['cibil_proxy']}</span>
+            </div>
+            <div><div style="font-family:'Inter',sans-serif;font-size:12px;color:{MUTED};margin-bottom:4px;">Default Risk</div>
+                 <span style="font-family:'Inter',sans-serif;font-size:36px;font-weight:800;
+                              color:{dec_color};">{r['prob']*100:.1f}%</span>
+            </div>
+            <div><div style="font-family:'Inter',sans-serif;font-size:12px;color:{MUTED};margin-bottom:4px;">Income Coherence</div>
+                 <span style="font-family:'Inter',sans-serif;font-size:36px;font-weight:800;
+                              color:{CYAN};">{r['confidence']}%</span>
+            </div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ── 5-pillar breakdown ──
+        section_header("Behavioral Signal Breakdown", "How each dimension contributed to your score", "📊")
+        dims = [
+            ("💸 Income Velocity",       r["vel_score"],   "How regularly and substantially money enters your account"),
+            ("🧾 Bill Discipline",        r["bill_score"],  "On-time payment of utility bills — a credit-score proxy"),
+            ("🏠 Address Stability",      r["stab_score"],  "Length at current address + UPI activity consistency"),
+            ("🎓 Skill & Employment",     r["skill_score"], "Employment status, tenure, offer letter and certificates"),
+            ("💰 Savings & Surplus",      r["surp_score"],  "Savings rate and spending category discipline"),
+        ]
+        dim_cols = st.columns(5)
+        for col, (label, score, desc) in zip(dim_cols, dims):
+            sc = GREEN if score >= 15 else (GOLD if score >= 8 else RED)
+            hrg = "46,204,138" if score >= 15 else ("245,166,35" if score >= 8 else "255,61,94")
+            with col:
+                st.markdown(f"""
+                <div style="background:{SURFACE};border:1.5px solid rgba({hrg},0.28);
+                            border-radius:14px;padding:18px 14px;text-align:center;height:100%;">
+                  <div style="font-size:22px;margin-bottom:8px;">{label.split()[0]}</div>
+                  <div style="font-family:'Inter',sans-serif;font-size:11px;font-weight:700;
+                              color:{WHITE};margin-bottom:6px;line-height:1.3;">
+                    {' '.join(label.split()[1:])}</div>
+                  <div style="font-family:'Inter',sans-serif;font-size:30px;font-weight:900;
+                              color:{sc};line-height:1;">{score}</div>
+                  <div style="font-family:'Inter',sans-serif;font-size:11px;color:{MUTED};">/20</div>
+                  <div style="font-family:'Inter',sans-serif;font-size:10px;color:{MUTED};
+                              margin-top:8px;line-height:1.4;">{desc}</div>
+                </div>""", unsafe_allow_html=True)
+
+        # ── Triangulation coherence ──
+        st.markdown('<div style="height:20px;"></div>', unsafe_allow_html=True)
+        coh_color = GREEN if r["coherent"] else GOLD
+        st.markdown(f"""
+        <div style="background:{SURFACE};border:1.5px solid {'rgba(35,209,139,0.30)' if r['coherent'] else 'rgba(255,184,48,0.30)'};
+                    border-radius:14px;padding:18px 24px;margin-bottom:20px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+                      color:{coh_color};letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;">
+            🔬 Temporal Triangulation — Incoherence Detector</div>
+          <p style="font-family:'Inter',sans-serif;font-size:14px;color:{TEXT};margin:0;line-height:1.65;">
+            Stated monthly inflow <strong style="color:{WHITE};">₹{r['income']:,.0f}</strong> vs
+            implied spend footprint <strong style="color:{WHITE};">
+            ₹{(r['upi']+r['elec']+r['rent']):,.0f}</strong>
+            (rent + electricity + UPI) —
+            <strong style="color:{coh_color};">
+            {'✓ Signals are coherent. No anomaly detected.' if r['coherent'] else '⚠ Gap detected. Inconsistency flagged for review.'}</strong>
+            &nbsp; Confidence Index: <strong style="color:{CYAN};">{r['confidence']}%</strong>
+          </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ── Recommendations for thin file ──
+        section_header("Next Steps to Become Bankable", "Your 90-day path from Thin File to Transparent File", "🗺️")
+        steps_tf = []
+        if r["hustle_tf"] < 60:
+            steps_tf.append(("🔴 Priority", "Open a secured credit card",
+                "Get a secured credit card against an FD of ₹10,000–25,000. Use it for groceries and fuel. "
+                "Pay 100% of the statement every month. CIBIL will record this within 45 days and "
+                "assign you a score — typically 650–700 within 6 months."))
+        if r["bill_score"] < 14:
+            steps_tf.append(("🟡 Quick Win", "Set utility bill auto-pay",
+                "Enable auto-debit for electricity, mobile and broadband. 12 months of on-time payments "
+                "is accepted as a CIBIL-equivalent signal by Tier-1 NBFCs under RBI's alternative data guidelines."))
+        if r["surp_score"] < 10:
+            steps_tf.append(("🟡 Quick Win", "Start a ₹500/month SIP",
+                "Even a ₹500 Liquid Fund SIP shows up on your bank statement as a consistent outflow "
+                "with a positive return. Underwriters read bank statements manually — this signals discipline."))
+        if r["skill_score"] < 12:
+            steps_tf.append(("🟢 Build Signal", "Obtain a professional certificate",
+                "Complete one industry-relevant online course (NPTEL, Coursera, Google). "
+                "In the absence of a credit history, Skill-as-Collateral is our strongest proxy "
+                "for future earning potential and default resilience."))
+        steps_tf.append(("🟢 90-Day Target", "Apply to NBFC with alternative data",
+            f"At {r['hustle_tf']}/100 Hustle Score, target Tier-1 NBFCs: Bajaj Finserv, Tata Capital, "
+            "or KreditBee — all of which have Alternative Data underwriting programs for thin-file borrowers. "
+            "Your Behavioral Underwriting Report from Wallet Warriors can be submitted directly."))
+
+        for priority, title, body in steps_tf:
+            p_color = RED if "Priority" in priority else (GOLD if "Quick Win" in priority else GREEN)
+            st.markdown(f"""
+            <div style="background:{SURFACE};border-left:3px solid {p_color};
+                        border-radius:0 12px 12px 0;padding:14px 18px;margin-bottom:12px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+                             color:{p_color};letter-spacing:.10em;text-transform:uppercase;">{priority}</span>
+                <span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:700;
+                             color:{WHITE};">{title}</span>
+              </div>
+              <p style="font-family:'Inter',sans-serif;font-size:13px;color:{TEXT};
+                        margin:0;line-height:1.65;">{body}</p>
+            </div>""", unsafe_allow_html=True)
+
+        # ── Back button ──
+        st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
+        if st.button("← Back to Credit Analysis", key="btn_tf_back"):
+            st.session_state["tf_result"] = None
+            st.session_state.page = "dashboard"
+            st.rerun()
+
+    else:
+        if st.button("← Back to Credit Analysis", key="btn_tf_back_empty"):
+            st.session_state.page = "dashboard"
+            st.rerun()
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────
+# ██  PDF REPORT GENERATOR  ██
+# ─────────────────────────────────────────────────────────────
+def generate_pdf_report(res, ud, username, plan):
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=18*mm, rightMargin=18*mm,
+        topMargin=16*mm, bottomMargin=16*mm
+    )
+
+    # ── Colour palette ──
+    C_BG      = colors.HexColor("#0c0e18")
+    C_SURFACE = colors.HexColor("#13162a")
+    C_GRAPE   = colors.HexColor("#7C4DFF")
+    C_LAV     = colors.HexColor("#A87FFF")
+    C_CYAN    = colors.HexColor("#00E5C0")
+    C_GOLD    = colors.HexColor("#FFB830")
+    C_GREEN   = colors.HexColor("#23D18B")
+    C_RED     = colors.HexColor("#FF4060")
+    C_WHITE   = colors.HexColor("#ECF0FF")
+    C_TEXT    = colors.HexColor("#C8D0F0")
+    C_MUTED   = colors.HexColor("#8892b0")
+    C_BORDER  = colors.HexColor("#2a2d4a")
+
+    # ── Base styles ──
+    base = getSampleStyleSheet()
+
+    def S(name, **kw):
+        s = ParagraphStyle(name, **kw)
+        return s
+
+    sTitle   = S("sTitle",   fontName="Helvetica-Bold",  fontSize=22, textColor=C_WHITE,   leading=28, spaceAfter=2)
+    sSub     = S("sSub",     fontName="Helvetica",       fontSize=10, textColor=C_MUTED,   leading=14, spaceAfter=8)
+    sSection = S("sSection", fontName="Helvetica-Bold",  fontSize=13, textColor=C_LAV,     leading=18, spaceBefore=14, spaceAfter=6)
+    sLabel   = S("sLabel",   fontName="Helvetica-Bold",  fontSize=8,  textColor=C_MUTED,   leading=11, spaceAfter=1)
+    sValue   = S("sValue",   fontName="Helvetica-Bold",  fontSize=14, textColor=C_WHITE,   leading=18, spaceAfter=0)
+    sBody    = S("sBody",    fontName="Helvetica",        fontSize=9,  textColor=C_TEXT,    leading=14, spaceAfter=4)
+    sSmall   = S("sSmall",   fontName="Helvetica",        fontSize=8,  textColor=C_MUTED,   leading=12, spaceAfter=2)
+    sBadge   = S("sBadge",   fontName="Helvetica-Bold",  fontSize=9,  textColor=C_WHITE,   leading=12, alignment=TA_CENTER)
+    sFooter  = S("sFooter",  fontName="Helvetica",        fontSize=7,  textColor=C_MUTED,   leading=10, alignment=TA_CENTER)
+
+    income = res["income"]; rent    = res["rent"];   savings = res["savings"]
+    loan   = res["loan"];   employ  = res["employ"]; cibil   = res["cibil"]
+    prob   = res["prob"];   dec     = res["dec"];    ar      = res["ar"]
+    ar_dims= res["ar_dims"];hs      = res["hs"];     vc      = res.get("vc", 80)
+    approved = dec == "approved"
+    dec_color = C_GREEN if approved else C_RED
+    dec_label = "✓ LIKELY APPROVED" if approved else "✗ HIGH RISK — LIKELY REJECTED"
+    risk_pct  = f"{prob*100:.1f}%"
+    date_str  = datetime.now().strftime("%d %b %Y, %I:%M %p")
+
+    story = []
+
+    # ══ HEADER BAND ══════════════════════════════════════════════
+    header_data = [[
+        Paragraph("⚡  Wallet Warriors", S("h1", fontName="Helvetica-Bold", fontSize=16, textColor=C_WHITE, leading=20)),
+        Paragraph(f"AI Credit Intelligence Report<br/><font size='8' color='#8892b0'>{date_str} &nbsp;·&nbsp; {username} &nbsp;·&nbsp; {plan} Plan</font>",
+                  S("hr", fontName="Helvetica", fontSize=10, textColor=C_TEXT, leading=14, alignment=TA_RIGHT)),
+    ]]
+    ht = Table(header_data, colWidths=[90*mm, 84*mm])
+    ht.setStyle(TableStyle([
+        ("BACKGROUND",   (0,0), (-1,-1), C_SURFACE),
+        ("ROWBACKGROUNDS",(0,0),(-1,-1),[C_SURFACE]),
+        ("TOPPADDING",   (0,0), (-1,-1), 10),
+        ("BOTTOMPADDING",(0,0), (-1,-1), 10),
+        ("LEFTPADDING",  (0,0), (0,-1),  12),
+        ("RIGHTPADDING", (-1,0),(-1,-1), 12),
+        ("ROUNDEDCORNERS", [6]),
+        ("BOX",          (0,0), (-1,-1), 1, C_BORDER),
+    ]))
+    story += [ht, Spacer(1, 8*mm)]
+
+    # ══ DECISION BANNER ═══════════════════════════════════════════
+    decision_data = [[
+        Paragraph(dec_label, S("dec", fontName="Helvetica-Bold", fontSize=13, textColor=dec_color, leading=18, alignment=TA_CENTER)),
+        Paragraph(f"Default Probability<br/><font size='20'><b>{risk_pct}</b></font>",
+                  S("dp", fontName="Helvetica", fontSize=9, textColor=C_MUTED, leading=14, alignment=TA_CENTER)),
+        Paragraph(f"Approval Readiness<br/><font size='20'><b>{ar}/100</b></font>",
+                  S("ar", fontName="Helvetica", fontSize=9, textColor=C_MUTED, leading=14, alignment=TA_CENTER)),
+        Paragraph(f"Hustle Score™<br/><font size='20'><b>{hs}/100</b></font>",
+                  S("hs", fontName="Helvetica", fontSize=9, textColor=C_MUTED, leading=14, alignment=TA_CENTER)),
+    ]]
+    dt = Table(decision_data, colWidths=[70*mm, 36*mm, 36*mm, 32*mm])
+    dt.setStyle(TableStyle([
+        ("BACKGROUND",   (0,0), (-1,-1), C_SURFACE),
+        ("BOX",          (0,0), (-1,-1), 1.5, dec_color),
+        ("LINEAFTER",    (0,0), (2,0),   0.5, C_BORDER),
+        ("TOPPADDING",   (0,0), (-1,-1), 10),
+        ("BOTTOMPADDING",(0,0), (-1,-1), 10),
+        ("LEFTPADDING",  (0,0), (-1,-1), 10),
+        ("RIGHTPADDING", (0,0), (-1,-1), 10),
+        ("VALIGN",       (0,0), (-1,-1), "MIDDLE"),
+        ("ROUNDEDCORNERS", [6]),
+    ]))
+    story += [dt, Spacer(1, 7*mm)]
+
+    # ══ FINANCIAL PROFILE ═════════════════════════════════════════
+    story.append(Paragraph("📊  Financial Profile", sSection))
+    foir = rent/income*100 if income else 0
+    dti  = loan/(income*12)*100 if income else 0
+    metrics = [
+        ("Monthly Income",    f"₹{income:,.0f}",  ""),
+        ("Monthly Rent/EMI",  f"₹{rent:,.0f}",    f"FOIR: {foir:.1f}%"),
+        ("Monthly Savings",   f"₹{savings:,.0f}", f"{savings/income*100:.1f}% of income" if income else ""),
+        ("Loan Requested",    f"₹{loan:,.0f}",    f"DTI: {dti:.1f}%"),
+        ("Employment",        f"{employ:.1f} yrs", "Current employer"),
+        ("CIBIL Score",       f"{int(cibil)}",     "Excellent" if cibil>=750 else "Good" if cibil>=700 else "Fair" if cibil>=650 else "Poor"),
+    ]
+    mrows = []
+    for i in range(0, len(metrics), 3):
+        row = []
+        for label, val, note in metrics[i:i+3]:
+            cell = Paragraph(
+                f"<font size='8' color='#8892b0'>{label}</font><br/>"
+                f"<font size='14'><b>{val}</b></font>"
+                + (f"<br/><font size='8' color='#8892b0'>{note}</font>" if note else ""),
+                S("mc", fontName="Helvetica", fontSize=9, textColor=C_WHITE, leading=16))
+            row.append(cell)
+        while len(row) < 3: row.append(Paragraph("", sBody))
+        mrows.append(row)
+    mt = Table(mrows, colWidths=[58*mm, 58*mm, 58*mm])
+    mt.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0),(-1,-1), C_SURFACE),
+        ("BOX",           (0,0),(-1,-1), 1, C_BORDER),
+        ("INNERGRID",     (0,0),(-1,-1), 0.5, C_BORDER),
+        ("TOPPADDING",    (0,0),(-1,-1), 9),
+        ("BOTTOMPADDING", (0,0),(-1,-1), 9),
+        ("LEFTPADDING",   (0,0),(-1,-1), 10),
+    ]))
+    story += [mt, Spacer(1, 6*mm)]
+
+    # ══ INCOME VERIFICATION ═══════════════════════════════════════
+    story.append(Paragraph("🔬  Income Verification", sSection))
+    ver_pass  = ud.get("coherent", True)
+    ver_label = "VERIFIED — All income signals coherent" if ver_pass else "⚠ ANOMALY DETECTED — Income inconsistency flagged"
+    ver_color = C_GREEN if ver_pass else C_RED
+    ver_data  = [[
+        Paragraph(ver_label, S("vl", fontName="Helvetica-Bold", fontSize=10, textColor=ver_color, leading=14)),
+        Paragraph(f"Confidence: {vc:.0f}%", S("vc", fontName="Helvetica-Bold", fontSize=10, textColor=C_CYAN, leading=14, alignment=TA_RIGHT)),
+    ]]
+    vt = Table(ver_data, colWidths=[120*mm, 54*mm])
+    vt.setStyle(TableStyle([
+        ("BACKGROUND",   (0,0),(-1,-1), C_SURFACE),
+        ("BOX",          (0,0),(-1,-1), 1, ver_color),
+        ("TOPPADDING",   (0,0),(-1,-1), 9),("BOTTOMPADDING",(0,0),(-1,-1), 9),
+        ("LEFTPADDING",  (0,0),(-1,-1), 10),("RIGHTPADDING",(0,0),(-1,-1), 10),
+    ]))
+    story += [vt]
+    flags = ud.get("flags", [])
+    if flags:
+        story.append(Spacer(1, 3*mm))
+        for f in flags[:4]:
+            sev_color = "#FF4060" if f.get("sev")=="high" else "#FFB830"
+            story.append(Paragraph(
+                f"<font color='{sev_color}'><b>[{f.get('sev','').upper()}]</b></font>  "
+                f"<b>{f.get('title','')}</b> — {f.get('msg','')}",
+                sSmall))
+    story.append(Spacer(1, 6*mm))
+
+    # ══ APPROVAL READINESS DIMENSIONS ════════════════════════════
+    story.append(Paragraph("🎯  Approval Readiness — 6 Pillars", sSection))
+    dim_rows = [[ 
+        Paragraph("<b>Pillar</b>", S("th", fontName="Helvetica-Bold", fontSize=8, textColor=C_MUTED, leading=11)),
+        Paragraph("<b>Score</b>", S("th2", fontName="Helvetica-Bold", fontSize=8, textColor=C_MUTED, leading=11, alignment=TA_CENTER)),
+        Paragraph("<b>Status</b>", S("th3", fontName="Helvetica-Bold", fontSize=8, textColor=C_MUTED, leading=11, alignment=TA_CENTER)),
+    ]]
+    dim_labels = {
+        "income_stability": "Income Stability",
+        "debt_load":        "Debt Load (FOIR)",
+        "savings_rate":     "Savings Rate",
+        "credit_score":     "Credit Score",
+        "employment":       "Employment Stability",
+        "verification":     "Income Verification",
+    }
+    for key, score in ar_dims.items():
+        label = dim_labels.get(key, key.replace("_"," ").title())
+        sc = C_GREEN if score >= 15 else (C_GOLD if score >= 8 else C_RED)
+        status = "Strong" if score >= 15 else ("Moderate" if score >= 8 else "Weak")
+        dim_rows.append([
+            Paragraph(label, sBody),
+            Paragraph(f"<b>{score}/20</b>", S("ds", fontName="Helvetica-Bold", fontSize=9, textColor=sc, leading=12, alignment=TA_CENTER)),
+            Paragraph(status, S("st", fontName="Helvetica", fontSize=8, textColor=sc, leading=12, alignment=TA_CENTER)),
+        ])
+    at = Table(dim_rows, colWidths=[100*mm, 30*mm, 44*mm])
+    at.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0),(-1,0),  C_BORDER),
+        ("BACKGROUND",    (0,1),(-1,-1), C_SURFACE),
+        ("ROWBACKGROUNDS",(0,1),(-1,-1), [C_SURFACE, colors.HexColor("#161929")]),
+        ("BOX",           (0,0),(-1,-1), 1, C_BORDER),
+        ("INNERGRID",     (0,0),(-1,-1), 0.3, C_BORDER),
+        ("TOPPADDING",    (0,0),(-1,-1), 7),("BOTTOMPADDING",(0,0),(-1,-1), 7),
+        ("LEFTPADDING",   (0,0),(-1,-1), 10),
+    ]))
+    story += [at, Spacer(1, 6*mm)]
+
+    # ══ AI RECOMMENDATIONS ════════════════════════════════════════
+    story.append(Paragraph("🧠  AI Recommendations", sSection))
+    recs = gen_recs(income, rent, savings, loan, employ, cibil, prob)
+    priority_map = {"high": C_RED, "medium": C_GOLD, "low": C_CYAN, "positive": C_GREEN}
+    for r in recs[:6]:
+        pc = priority_map.get(r.get("p","low"), C_CYAN)
+        story.append(Paragraph(
+            f"<font color='{pc.hexval() if hasattr(pc,'hexval') else '#00E5C0'}'>"
+            f"<b>{r.get('icon','')} {r.get('title','')}</b></font>",
+            S("rt", fontName="Helvetica-Bold", fontSize=9, textColor=C_WHITE, leading=13, spaceBefore=5)))
+        if r.get("what"):
+            story.append(Paragraph(f"<b>What:</b> {r['what']}", sSmall))
+        if r.get("how"):
+            story.append(Paragraph(f"<b>How:</b> {r['how']}", sSmall))
+    story.append(Spacer(1, 5*mm))
+
+    # ══ 90-DAY ROADMAP ════════════════════════════════════════════
+    story.append(Paragraph("🗺️  90-Day Improvement Roadmap", sSection))
+    roadmap = gen_roadmap(income, rent, savings, loan, employ, cibil, prob)
+    months = ["Month 1 — Foundation", "Month 2 — Momentum", "Month 3 — Application Ready"]
+    mc = [C_GRAPE, C_CYAN, C_GREEN]
+    for i, (month_label, month_steps, col) in enumerate(zip(months, roadmap, mc)):
+        story.append(Paragraph(
+            f"<b>{month_label}</b>",
+            S("ml", fontName="Helvetica-Bold", fontSize=9, textColor=col, leading=13, spaceBefore=6)))
+        for step in month_steps:
+            story.append(Paragraph(f"• {step}", sSmall))
+
+    story.append(Spacer(1, 8*mm))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=C_BORDER))
+    story.append(Spacer(1, 3*mm))
+    story.append(Paragraph(
+        f"Generated by Wallet Warriors AI Credit Intelligence Platform · {date_str} · "
+        "This report is for informational purposes only and does not constitute financial advice.",
+        sFooter))
+
+    doc.build(story)
+    buf.seek(0)
+    return buf.read()
+
 
 # ─────────────────────────────────────────────────────────────
 # ROUTER
@@ -2513,4 +3120,5 @@ if not st.session_state.authenticated and st.session_state.page != "login":
     "onboard":       render_onboard,
     "verify_result": render_verify_result,
     "dashboard":     render_dashboard,
+    "thin_file":     render_thin_file,
 }.get(st.session_state.page, render_login)()
