@@ -131,20 +131,7 @@ streamlit run wallet_warriors_final.py
 
 Optional: place a trained model at `models/credit_model.pkl`. If not present, the app trains a synthetic model automatically on first launch.
 
----
 
-## Project Structure
-
-```
-wallet-warriors/
-├── wallet_warriors_final.py   # Main application (single-file architecture)
-├── models/
-│   └── credit_model.pkl       # Trained XGBoost model (optional)
-├── README.md
-└── requirements.txt
-```
-
----
 
 ## Regulatory Compliance
 

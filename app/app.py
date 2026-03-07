@@ -3200,7 +3200,7 @@ def generate_pdf_report(res, ud, username, plan):
         Paragraph("<b>Pillar</b>",  S("th1", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11)),
         Paragraph("<b>Score</b>",   S("th2", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11, alignment=TA_CENTER)),
         Paragraph("<b>Status</b>",  S("th3", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11, alignment=TA_CENTER)),
-        Paragraph("<b>RBI Benchmark</b>", S("th4", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11)),
+        Paragraph("<b>RBI Benchmark</b>", S("th4", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading  =11)),
     ]]
     benchmarks = {
         "income_stability": "Stable salary / verified inflow required",
