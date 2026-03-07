@@ -5,9 +5,10 @@ scikit-learn
 xgboost
 shap
 joblib
+matplotlib
 plotly
-streamlit-authenticator
-pytesseract
-opencv-python
-pdf2image
 PyYAML
+streamlit-authenticator
+opencv-python
+pytesseract
+pdf2image
