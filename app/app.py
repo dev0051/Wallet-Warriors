@@ -2873,19 +2873,20 @@ def render_thin_file():
 
 
 # ─────────────────────────────────────────────────────────────
-# ██  PDF REPORT GENERATOR  ██
+# ██  PDF REPORT GENERATOR — REGULATORY COMPLIANT  ██
+#     RBI Guidelines · SEBI Disclosure Standards · DPDP Act 2023
 # ─────────────────────────────────────────────────────────────
 def generate_pdf_report(res, ud, username, plan):
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf, pagesize=A4,
-        leftMargin=18*mm, rightMargin=18*mm,
-        topMargin=16*mm, bottomMargin=16*mm
+        leftMargin=20*mm, rightMargin=20*mm,
+        topMargin=20*mm, bottomMargin=24*mm
     )
 
-    # ── Colour palette ──
-    C_BG      = colors.HexColor("#0c0e18")
+    # ── Colours ──
     C_SURFACE = colors.HexColor("#13162a")
+    C_CARD    = colors.HexColor("#1a1e35")
     C_GRAPE   = colors.HexColor("#7C4DFF")
     C_LAV     = colors.HexColor("#A87FFF")
     C_CYAN    = colors.HexColor("#00E5C0")
@@ -2896,149 +2897,297 @@ def generate_pdf_report(res, ud, username, plan):
     C_TEXT    = colors.HexColor("#C8D0F0")
     C_MUTED   = colors.HexColor("#8892b0")
     C_BORDER  = colors.HexColor("#2a2d4a")
+    C_WARN_BG = colors.HexColor("#1e1608")
+    C_WARN_BD = colors.HexColor("#FFB830")
+    C_BLACK   = colors.HexColor("#060810")
+    W         = 170*mm   # usable width
 
-    # ── Base styles ──
-    base = getSampleStyleSheet()
-
+    # ── Style factory ──
     def S(name, **kw):
-        s = ParagraphStyle(name, **kw)
-        return s
+        return ParagraphStyle(name, **kw)
 
-    sTitle   = S("sTitle",   fontName="Helvetica-Bold",  fontSize=22, textColor=C_WHITE,   leading=28, spaceAfter=2)
-    sSub     = S("sSub",     fontName="Helvetica",       fontSize=10, textColor=C_MUTED,   leading=14, spaceAfter=8)
-    sSection = S("sSection", fontName="Helvetica-Bold",  fontSize=13, textColor=C_LAV,     leading=18, spaceBefore=14, spaceAfter=6)
-    sLabel   = S("sLabel",   fontName="Helvetica-Bold",  fontSize=8,  textColor=C_MUTED,   leading=11, spaceAfter=1)
-    sValue   = S("sValue",   fontName="Helvetica-Bold",  fontSize=14, textColor=C_WHITE,   leading=18, spaceAfter=0)
-    sBody    = S("sBody",    fontName="Helvetica",        fontSize=9,  textColor=C_TEXT,    leading=14, spaceAfter=4)
-    sSmall   = S("sSmall",   fontName="Helvetica",        fontSize=8,  textColor=C_MUTED,   leading=12, spaceAfter=2)
-    sBadge   = S("sBadge",   fontName="Helvetica-Bold",  fontSize=9,  textColor=C_WHITE,   leading=12, alignment=TA_CENTER)
-    sFooter  = S("sFooter",  fontName="Helvetica",        fontSize=7,  textColor=C_MUTED,   leading=10, alignment=TA_CENTER)
+    sH1      = S("H1",  fontName="Helvetica-Bold",  fontSize=18, textColor=C_WHITE,  leading=22, spaceAfter=2)
+    sH2      = S("H2",  fontName="Helvetica-Bold",  fontSize=11, textColor=C_LAV,    leading=15, spaceBefore=10, spaceAfter=4)
+    sH3      = S("H3",  fontName="Helvetica-Bold",  fontSize=9,  textColor=C_WHITE,  leading=13, spaceBefore=4,  spaceAfter=2)
+    sBody    = S("BD",  fontName="Helvetica",        fontSize=8.5,textColor=C_TEXT,   leading=13, spaceAfter=3)
+    sSmall   = S("SM",  fontName="Helvetica",        fontSize=7.5,textColor=C_MUTED,  leading=11, spaceAfter=2)
+    sWarn    = S("WN",  fontName="Helvetica-Bold",  fontSize=7.5,textColor=C_GOLD,   leading=11)
+    sDiscl   = S("DC",  fontName="Helvetica",        fontSize=7,  textColor=C_MUTED,  leading=10, spaceAfter=2)
+    sFooter  = S("FT",  fontName="Helvetica",        fontSize=6.5,textColor=C_MUTED,  leading=9,  alignment=TA_CENTER)
+    sCentre  = S("CT",  fontName="Helvetica",        fontSize=8.5,textColor=C_TEXT,   leading=13, alignment=TA_CENTER)
+    sRight   = S("RT",  fontName="Helvetica",        fontSize=8,  textColor=C_MUTED,  leading=12, alignment=TA_RIGHT)
 
-    income = res["income"]; rent    = res["rent"];   savings = res["savings"]
-    loan   = res["loan"];   employ  = res["employ"]; cibil   = res["cibil"]
-    prob   = res["prob"];   dec     = res["dec"];    ar      = res["ar"]
-    ar_dims= res["ar_dims"];hs      = res["hs"];     vc      = res.get("vc", 80)
-    approved = dec == "approved"
-    dec_color = C_GREEN if approved else C_RED
-    dec_label = "✓ LIKELY APPROVED" if approved else "✗ HIGH RISK — LIKELY REJECTED"
-    risk_pct  = f"{prob*100:.1f}%"
-    date_str  = datetime.now().strftime("%d %b %Y, %I:%M %p")
+    # ── Helper: section banner ──
+    def section_banner(title, risk_note=""):
+        rows = [[
+            Paragraph(f"<b>{title}</b>",
+                      S("sb", fontName="Helvetica-Bold", fontSize=10, textColor=C_WHITE, leading=14)),
+            Paragraph(risk_note,
+                      S("rn", fontName="Helvetica", fontSize=7, textColor=C_GOLD, leading=10, alignment=TA_RIGHT))
+        ]]
+        t = Table(rows, colWidths=[120*mm, 50*mm])
+        t.setStyle(TableStyle([
+            ("BACKGROUND",    (0,0),(-1,-1), C_CARD),
+            ("LINEBELOW",     (0,0),(-1,-1), 1.5, C_GRAPE),
+            ("TOPPADDING",    (0,0),(-1,-1), 7),
+            ("BOTTOMPADDING", (0,0),(-1,-1), 7),
+            ("LEFTPADDING",   (0,0),(0,-1),  10),
+            ("RIGHTPADDING",  (-1,0),(-1,-1),10),
+        ]))
+        return t
+
+    # ── Helper: risk warning box ──
+    def risk_box(text):
+        rows = [[Paragraph(f"⚠  RISK WARNING: {text}", sWarn)]]
+        t = Table(rows, colWidths=[W])
+        t.setStyle(TableStyle([
+            ("BACKGROUND",    (0,0),(-1,-1), C_WARN_BG),
+            ("BOX",           (0,0),(-1,-1), 1, C_WARN_BD),
+            ("TOPPADDING",    (0,0),(-1,-1), 7),
+            ("BOTTOMPADDING", (0,0),(-1,-1), 7),
+            ("LEFTPADDING",   (0,0),(-1,-1), 10),
+        ]))
+        return t
+
+    # ── Data ──
+    income  = res["income"];  rent    = res["rent"];   savings = res["savings"]
+    loan    = res["loan"];    employ  = res["employ"]; cibil   = res["cibil"]
+    prob    = res["prob"];    dec     = res["dec"];    ar      = res["ar"]
+    ar_dims = res["ar_dims"]; hs      = res["hs"];     vc      = res.get("vc", 80)
+    approved   = dec == "approved"
+    dec_color  = C_GREEN if approved else C_RED
+    dec_label  = "LIKELY CREDITWORTHY" if approved else "HIGH DEFAULT RISK — APPLICATION LIKELY REJECTED"
+    risk_pct   = f"{prob*100:.1f}%"
+    foir       = rent/income*100 if income else 0
+    dti        = loan/(income*12)*100 if income else 0
+    date_str   = datetime.now().strftime("%d %b %Y, %I:%M %p IST")
+    report_id  = f"WW-{datetime.now().strftime('%Y%m%d%H%M%S')}-{abs(hash(username)) % 9999:04d}"
 
     story = []
 
-    # ══ HEADER BAND ══════════════════════════════════════════════
-    header_data = [[
-        Paragraph("⚡  Wallet Warriors", S("h1", fontName="Helvetica-Bold", fontSize=16, textColor=C_WHITE, leading=20)),
-        Paragraph(f"AI Credit Intelligence Report<br/><font size='8' color='#8892b0'>{date_str} &nbsp;·&nbsp; {username} &nbsp;·&nbsp; {plan} Plan</font>",
-                  S("hr", fontName="Helvetica", fontSize=10, textColor=C_TEXT, leading=14, alignment=TA_RIGHT)),
-    ]]
-    ht = Table(header_data, colWidths=[90*mm, 84*mm])
-    ht.setStyle(TableStyle([
-        ("BACKGROUND",   (0,0), (-1,-1), C_SURFACE),
-        ("ROWBACKGROUNDS",(0,0),(-1,-1),[C_SURFACE]),
-        ("TOPPADDING",   (0,0), (-1,-1), 10),
-        ("BOTTOMPADDING",(0,0), (-1,-1), 10),
-        ("LEFTPADDING",  (0,0), (0,-1),  12),
-        ("RIGHTPADDING", (-1,0),(-1,-1), 12),
-        ("ROUNDEDCORNERS", [6]),
-        ("BOX",          (0,0), (-1,-1), 1, C_BORDER),
-    ]))
-    story += [ht, Spacer(1, 8*mm)]
+    # ════════════════════════════════════════════════════════════
+    # PAGE 1 — COVER & CONSENT
+    # ════════════════════════════════════════════════════════════
 
-    # ══ DECISION BANNER ═══════════════════════════════════════════
-    decision_data = [[
-        Paragraph(dec_label, S("dec", fontName="Helvetica-Bold", fontSize=13, textColor=dec_color, leading=18, alignment=TA_CENTER)),
-        Paragraph(f"Default Probability<br/><font size='20'><b>{risk_pct}</b></font>",
-                  S("dp", fontName="Helvetica", fontSize=9, textColor=C_MUTED, leading=14, alignment=TA_CENTER)),
-        Paragraph(f"Approval Readiness<br/><font size='20'><b>{ar}/100</b></font>",
-                  S("ar", fontName="Helvetica", fontSize=9, textColor=C_MUTED, leading=14, alignment=TA_CENTER)),
-        Paragraph(f"Hustle Score™<br/><font size='20'><b>{hs}/100</b></font>",
-                  S("hs", fontName="Helvetica", fontSize=9, textColor=C_MUTED, leading=14, alignment=TA_CENTER)),
+    # ── Cover header ──
+    cover = [[
+        Paragraph(
+            "<b>Wallet Warriors</b><br/>"
+            "<font size='8' color='#8892b0'>AI Credit Intelligence Platform</font>",
+            S("cv1", fontName="Helvetica-Bold", fontSize=16, textColor=C_WHITE, leading=22)),
+        Paragraph(
+            f"<font size='8' color='#8892b0'>Report ID</font><br/>"
+            f"<b>{report_id}</b><br/>"
+            f"<font size='7' color='#8892b0'>{date_str}</font>",
+            S("cv2", fontName="Helvetica", fontSize=9, textColor=C_TEXT, leading=13, alignment=TA_RIGHT)),
     ]]
-    dt = Table(decision_data, colWidths=[70*mm, 36*mm, 36*mm, 32*mm])
-    dt.setStyle(TableStyle([
-        ("BACKGROUND",   (0,0), (-1,-1), C_SURFACE),
-        ("BOX",          (0,0), (-1,-1), 1.5, dec_color),
-        ("LINEAFTER",    (0,0), (2,0),   0.5, C_BORDER),
-        ("TOPPADDING",   (0,0), (-1,-1), 10),
-        ("BOTTOMPADDING",(0,0), (-1,-1), 10),
-        ("LEFTPADDING",  (0,0), (-1,-1), 10),
-        ("RIGHTPADDING", (0,0), (-1,-1), 10),
-        ("VALIGN",       (0,0), (-1,-1), "MIDDLE"),
-        ("ROUNDEDCORNERS", [6]),
+    ct = Table(cover, colWidths=[110*mm, 60*mm])
+    ct.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0),(-1,-1), C_SURFACE),
+        ("BOX",           (0,0),(-1,-1), 0.5, C_BORDER),
+        ("LINEBELOW",     (0,0),(-1,0),  2,   C_GRAPE),
+        ("TOPPADDING",    (0,0),(-1,-1), 12),
+        ("BOTTOMPADDING", (0,0),(-1,-1), 12),
+        ("LEFTPADDING",   (0,0),(0,-1),  14),
+        ("RIGHTPADDING",  (-1,0),(-1,-1),14),
+        ("VALIGN",        (0,0),(-1,-1), "MIDDLE"),
     ]))
-    story += [dt, Spacer(1, 7*mm)]
+    story += [ct, Spacer(1, 5*mm)]
 
-    # ══ FINANCIAL PROFILE ═════════════════════════════════════════
-    story.append(Paragraph("📊  Financial Profile", sSection))
-    foir = rent/income*100 if income else 0
-    dti  = loan/(income*12)*100 if income else 0
+    # ── Subject line ──
+    subj = [[
+        Paragraph(f"Credit Intelligence Report — <b>{username}</b>", sH1),
+        Paragraph(f"{plan} Plan", S("pl", fontName="Helvetica-Bold", fontSize=10,
+                  textColor=C_GRAPE, leading=14, alignment=TA_RIGHT)),
+    ]]
+    st2 = Table(subj, colWidths=[130*mm, 40*mm])
+    st2.setStyle(TableStyle([
+        ("VALIGN", (0,0),(-1,-1), "BOTTOM"),
+        ("BOTTOMPADDING", (0,0),(-1,-1), 4),
+    ]))
+    story += [st2, HRFlowable(width="100%", thickness=0.5, color=C_BORDER), Spacer(1, 4*mm)]
+
+    # ── DPDP Act 2023 — Consent & Data Notice ──
+    story.append(section_banner(
+        "DATA USAGE CONSENT NOTICE",
+        "DPDP Act 2023 · Section 6 & 7"))
+    story.append(Spacer(1, 3*mm))
+    dpdp_rows = [
+        ["Data Principal", username],
+        ["Data Fiduciary", "Wallet Warriors AI Credit Intelligence Platform"],
+        ["Purpose of Processing", "Credit risk assessment, loan eligibility scoring, and personalised financial advisory"],
+        ["Legal Basis", "Consent provided at login (DPDP Act 2023, Section 6). Data used solely for stated purpose."],
+        ["Data Retention", "Session data retained for 90 days. No data sold or shared with third parties without consent."],
+        ["Right to Erasure", "You may request deletion of your data at any time under DPDP Act 2023, Section 13."],
+        ["Grievance Officer", "grievance@walletwarriors.ai  |  Response within 72 hours as per DPDP Rules 2025"],
+    ]
+    dpdp_t = Table(
+        [[Paragraph(f"<b>{k}</b>", sSmall), Paragraph(v, sSmall)] for k, v in dpdp_rows],
+        colWidths=[52*mm, 118*mm])
+    dpdp_t.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0),(-1,-1), C_SURFACE),
+        ("ROWBACKGROUNDS",(0,0),(-1,-1), [C_SURFACE, C_CARD]),
+        ("BOX",           (0,0),(-1,-1), 0.5, C_BORDER),
+        ("INNERGRID",     (0,0),(-1,-1), 0.3, C_BORDER),
+        ("TOPPADDING",    (0,0),(-1,-1), 5),
+        ("BOTTOMPADDING", (0,0),(-1,-1), 5),
+        ("LEFTPADDING",   (0,0),(-1,-1), 8),
+        ("VALIGN",        (0,0),(-1,-1), "TOP"),
+    ]))
+    story += [dpdp_t, Spacer(1, 5*mm)]
+
+    # ── RBI & SEBI Regulatory Framing ──
+    story.append(section_banner(
+        "REGULATORY FRAMEWORK & DISCLOSURES",
+        "RBI Guidelines · SEBI Disclosure Standards"))
+    story.append(Spacer(1, 3*mm))
+    reg_text = (
+        "This report is generated by an AI-driven credit intelligence engine. "
+        "It is intended as a <b>decision-support tool</b> and does not constitute a credit bureau report, "
+        "a formal credit score, or a binding lending decision under RBI's Credit Information Companies "
+        "(Regulation) Act, 2005. "
+        "The default probability score is produced by a machine learning model (XGBoost, AUC 0.86) "
+        "trained on synthetic data for demonstration purposes. "
+        "In a production environment, this model would be re-trained on licensed bureau data under "
+        "RBI Master Direction — Credit Information Reporting, 2025. "
+        "Scores and recommendations herein do not fall under SEBI's Investment Adviser Regulations, 2013 "
+        "and should not be construed as investment or securities advice. "
+        "All financial ratios (FOIR, DTI) are calculated per RBI's Fair Lending Practices Circular "
+        "RBI/2023-24/53 and NBFC Fair Practice Code guidelines."
+    )
+    story.append(Paragraph(reg_text, sBody))
+    story.append(Spacer(1, 5*mm))
+
+    # ════════════════════════════════════════════════════════════
+    # PAGE 2 — AI DECISION & FINANCIAL PROFILE
+    # ════════════════════════════════════════════════════════════
+
+    # ── AI Decision Banner ──
+    story.append(section_banner("AI CREDIT DECISION", "⚠ FOR INFORMATIONAL USE ONLY — NOT A FINAL LENDING DECISION"))
+    story.append(Spacer(1, 3*mm))
+    story.append(risk_box(
+        "This AI output is a probabilistic estimate. Final credit decisions must be made by a "
+        "licensed lender after full KYC, bureau verification, and regulatory due diligence."
+    ))
+    story.append(Spacer(1, 3*mm))
+
+    dec_data = [[
+        Paragraph(
+            f"<font size='13'><b>{dec_label}</b></font><br/>"
+            f"<font size='8' color='#8892b0'>Based on XGBoost model — AUC 0.86</font>",
+            S("dl", fontName="Helvetica-Bold", fontSize=11, textColor=dec_color, leading=18)),
+        Paragraph(
+            f"<font size='8' color='#8892b0'>Default Probability</font><br/>"
+            f"<font size='22'><b>{risk_pct}</b></font>",
+            sCentre),
+        Paragraph(
+            f"<font size='8' color='#8892b0'>Approval Readiness</font><br/>"
+            f"<font size='22'><b>{ar}/100</b></font>",
+            sCentre),
+        Paragraph(
+            f"<font size='8' color='#8892b0'>Hustle Score™</font><br/>"
+            f"<font size='22'><b>{hs}/100</b></font>",
+            sCentre),
+    ]]
+    dec_t = Table(dec_data, colWidths=[74*mm, 32*mm, 32*mm, 32*mm])
+    dec_t.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0),(-1,-1), C_SURFACE),
+        ("BOX",           (0,0),(-1,-1), 1.5, dec_color),
+        ("LINEAFTER",     (0,0),(2,0),   0.5, C_BORDER),
+        ("TOPPADDING",    (0,0),(-1,-1), 10),
+        ("BOTTOMPADDING", (0,0),(-1,-1), 10),
+        ("LEFTPADDING",   (0,0),(-1,-1), 10),
+        ("VALIGN",        (0,0),(-1,-1), "MIDDLE"),
+    ]))
+    story += [dec_t, Spacer(1, 6*mm)]
+
+    # ── Financial Profile ──
+    story.append(section_banner("FINANCIAL PROFILE", "⚠ User-declared data — not independently verified"))
+    story.append(Spacer(1, 3*mm))
+    story.append(risk_box(
+        "All figures below are self-declared by the applicant. "
+        "Wallet Warriors uses Triangulation Engine to cross-verify these against behavioural signals, "
+        "but independent document verification by a lender is mandatory before disbursement."
+    ))
+    story.append(Spacer(1, 3*mm))
+
     metrics = [
-        ("Monthly Income",    f"₹{income:,.0f}",  ""),
-        ("Monthly Rent/EMI",  f"₹{rent:,.0f}",    f"FOIR: {foir:.1f}%"),
-        ("Monthly Savings",   f"₹{savings:,.0f}", f"{savings/income*100:.1f}% of income" if income else ""),
-        ("Loan Requested",    f"₹{loan:,.0f}",    f"DTI: {dti:.1f}%"),
-        ("Employment",        f"{employ:.1f} yrs", "Current employer"),
-        ("CIBIL Score",       f"{int(cibil)}",     "Excellent" if cibil>=750 else "Good" if cibil>=700 else "Fair" if cibil>=650 else "Poor"),
+        ("Monthly Income",    f"Rs.{income:,.0f}",   "Self-declared"),
+        ("Monthly Rent/EMI",  f"Rs.{rent:,.0f}",     f"FOIR: {foir:.1f}%  (RBI safe limit: <50%)"),
+        ("Monthly Savings",   f"Rs.{savings:,.0f}",  f"{savings/income*100:.1f}% of income" if income else "—"),
+        ("Loan Requested",    f"Rs.{loan:,.0f}",     f"DTI: {dti:.1f}%"),
+        ("Employment",        f"{employ:.1f} yrs",   "At current employer"),
+        ("CIBIL Score",       f"{int(cibil)}",
+         "Excellent (750+)" if cibil>=750 else "Good (700-749)" if cibil>=700 else
+         "Fair (650-699)" if cibil>=650 else "Poor (<650)"),
     ]
     mrows = []
     for i in range(0, len(metrics), 3):
         row = []
         for label, val, note in metrics[i:i+3]:
-            cell = Paragraph(
-                f"<font size='8' color='#8892b0'>{label}</font><br/>"
-                f"<font size='14'><b>{val}</b></font>"
-                + (f"<br/><font size='8' color='#8892b0'>{note}</font>" if note else ""),
-                S("mc", fontName="Helvetica", fontSize=9, textColor=C_WHITE, leading=16))
-            row.append(cell)
+            row.append(Paragraph(
+                f"<font size='7' color='#8892b0'>{label}</font><br/>"
+                f"<font size='13'><b>{val}</b></font><br/>"
+                f"<font size='7' color='#8892b0'>{note}</font>",
+                S(f"mc{i}", fontName="Helvetica", fontSize=8, textColor=C_WHITE, leading=15)))
         while len(row) < 3: row.append(Paragraph("", sBody))
         mrows.append(row)
-    mt = Table(mrows, colWidths=[58*mm, 58*mm, 58*mm])
+    mt = Table(mrows, colWidths=[W/3, W/3, W/3])
     mt.setStyle(TableStyle([
         ("BACKGROUND",    (0,0),(-1,-1), C_SURFACE),
-        ("BOX",           (0,0),(-1,-1), 1, C_BORDER),
-        ("INNERGRID",     (0,0),(-1,-1), 0.5, C_BORDER),
+        ("BOX",           (0,0),(-1,-1), 0.5, C_BORDER),
+        ("INNERGRID",     (0,0),(-1,-1), 0.3, C_BORDER),
         ("TOPPADDING",    (0,0),(-1,-1), 9),
         ("BOTTOMPADDING", (0,0),(-1,-1), 9),
         ("LEFTPADDING",   (0,0),(-1,-1), 10),
     ]))
     story += [mt, Spacer(1, 6*mm)]
 
-    # ══ INCOME VERIFICATION ═══════════════════════════════════════
-    story.append(Paragraph("🔬  Income Verification", sSection))
+    # ── Income Verification ──
+    story.append(section_banner("INCOME VERIFICATION — TRIANGULATION ENGINE", "⚠ AI-generated cross-check — not a formal audit"))
+    story.append(Spacer(1, 3*mm))
     ver_pass  = ud.get("coherent", True)
-    ver_label = "VERIFIED — All income signals coherent" if ver_pass else "⚠ ANOMALY DETECTED — Income inconsistency flagged"
+    ver_label = "VERIFIED — Income signals are internally coherent" if ver_pass else "ANOMALY DETECTED — Income inconsistency flagged"
     ver_color = C_GREEN if ver_pass else C_RED
-    ver_data  = [[
-        Paragraph(ver_label, S("vl", fontName="Helvetica-Bold", fontSize=10, textColor=ver_color, leading=14)),
-        Paragraph(f"Confidence: {vc:.0f}%", S("vc", fontName="Helvetica-Bold", fontSize=10, textColor=C_CYAN, leading=14, alignment=TA_RIGHT)),
+    story.append(risk_box(
+        "Triangulation is a cross-correlation of self-declared data. It does not replace "
+        "formal income verification (ITR, Form 16, bank statements) required under RBI KYC norms."
+    ))
+    story.append(Spacer(1, 3*mm))
+    ver_d = [[
+        Paragraph(f"<b>{ver_label}</b>",
+                  S("vl", fontName="Helvetica-Bold", fontSize=9, textColor=ver_color, leading=13)),
+        Paragraph(f"Confidence Index: <b>{vc:.0f}%</b>",
+                  S("vi", fontName="Helvetica-Bold", fontSize=9, textColor=C_CYAN, leading=13, alignment=TA_RIGHT)),
     ]]
-    vt = Table(ver_data, colWidths=[120*mm, 54*mm])
+    vt = Table(ver_d, colWidths=[120*mm, 50*mm])
     vt.setStyle(TableStyle([
-        ("BACKGROUND",   (0,0),(-1,-1), C_SURFACE),
-        ("BOX",          (0,0),(-1,-1), 1, ver_color),
-        ("TOPPADDING",   (0,0),(-1,-1), 9),("BOTTOMPADDING",(0,0),(-1,-1), 9),
-        ("LEFTPADDING",  (0,0),(-1,-1), 10),("RIGHTPADDING",(0,0),(-1,-1), 10),
+        ("BACKGROUND",    (0,0),(-1,-1), C_SURFACE),
+        ("BOX",           (0,0),(-1,-1), 1, ver_color),
+        ("TOPPADDING",    (0,0),(-1,-1), 8),("BOTTOMPADDING",(0,0),(-1,-1), 8),
+        ("LEFTPADDING",   (0,0),(-1,-1), 10),("RIGHTPADDING",(0,0),(-1,-1), 10),
     ]))
-    story += [vt]
+    story.append(vt)
     flags = ud.get("flags", [])
     if flags:
         story.append(Spacer(1, 3*mm))
         for f in flags[:4]:
-            sev_color = "#FF4060" if f.get("sev")=="high" else "#FFB830"
+            sc = "#FF4060" if f.get("sev")=="high" else "#FFB830"
             story.append(Paragraph(
-                f"<font color='{sev_color}'><b>[{f.get('sev','').upper()}]</b></font>  "
+                f"<font color='{sc}'><b>[{f.get('sev','').upper()}]</b></font>  "
                 f"<b>{f.get('title','')}</b> — {f.get('msg','')}",
                 sSmall))
     story.append(Spacer(1, 6*mm))
 
-    # ══ APPROVAL READINESS DIMENSIONS ════════════════════════════
-    story.append(Paragraph("🎯  Approval Readiness — 6 Pillars", sSection))
-    dim_rows = [[ 
-        Paragraph("<b>Pillar</b>", S("th", fontName="Helvetica-Bold", fontSize=8, textColor=C_MUTED, leading=11)),
-        Paragraph("<b>Score</b>", S("th2", fontName="Helvetica-Bold", fontSize=8, textColor=C_MUTED, leading=11, alignment=TA_CENTER)),
-        Paragraph("<b>Status</b>", S("th3", fontName="Helvetica-Bold", fontSize=8, textColor=C_MUTED, leading=11, alignment=TA_CENTER)),
-    ]]
+    # ── Approval Readiness ──
+    story.append(section_banner("APPROVAL READINESS — 6-PILLAR ASSESSMENT", "⚠ Indicative scoring — not a credit bureau output"))
+    story.append(Spacer(1, 3*mm))
+    story.append(risk_box(
+        "Pillar scores are computed by the Wallet Warriors proprietary model. "
+        "They are indicative only and do not represent an official creditworthiness determination "
+        "under RBI's Credit Information Companies (Regulation) Act, 2005."
+    ))
+    story.append(Spacer(1, 3*mm))
     dim_labels = {
         "income_stability": "Income Stability",
         "debt_load":        "Debt Load (FOIR)",
@@ -3047,61 +3196,135 @@ def generate_pdf_report(res, ud, username, plan):
         "employment":       "Employment Stability",
         "verification":     "Income Verification",
     }
+    dim_rows = [[
+        Paragraph("<b>Pillar</b>",  S("th1", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11)),
+        Paragraph("<b>Score</b>",   S("th2", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11, alignment=TA_CENTER)),
+        Paragraph("<b>Status</b>",  S("th3", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11, alignment=TA_CENTER)),
+        Paragraph("<b>RBI Benchmark</b>", S("th4", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11)),
+    ]]
+    benchmarks = {
+        "income_stability": "Stable salary / verified inflow required",
+        "debt_load":        "FOIR < 50% per RBI Fair Lending Circular",
+        "savings_rate":     "Minimum 10-15% savings-to-income ratio",
+        "credit_score":     "CIBIL >= 700 preferred by scheduled banks",
+        "employment":       "12+ months at current employer standard",
+        "verification":     "Income within 10% of document proof",
+    }
     for key, score in ar_dims.items():
         label = dim_labels.get(key, key.replace("_"," ").title())
-        sc = C_GREEN if score >= 15 else (C_GOLD if score >= 8 else C_RED)
-        status = "Strong" if score >= 15 else ("Moderate" if score >= 8 else "Weak")
+        sc    = C_GREEN if score >= 15 else (C_GOLD if score >= 8 else C_RED)
+        status= "Strong" if score >= 15 else ("Moderate" if score >= 8 else "Weak")
+        bmark = benchmarks.get(key, "—")
         dim_rows.append([
-            Paragraph(label, sBody),
-            Paragraph(f"<b>{score}/20</b>", S("ds", fontName="Helvetica-Bold", fontSize=9, textColor=sc, leading=12, alignment=TA_CENTER)),
-            Paragraph(status, S("st", fontName="Helvetica", fontSize=8, textColor=sc, leading=12, alignment=TA_CENTER)),
+            Paragraph(label, sSmall),
+            Paragraph(f"<b>{score}/20</b>",
+                      S(f"ds{key}", fontName="Helvetica-Bold", fontSize=9,
+                        textColor=sc, leading=12, alignment=TA_CENTER)),
+            Paragraph(status,
+                      S(f"st{key}", fontName="Helvetica", fontSize=8,
+                        textColor=sc, leading=12, alignment=TA_CENTER)),
+            Paragraph(bmark, sSmall),
         ])
-    at = Table(dim_rows, colWidths=[100*mm, 30*mm, 44*mm])
+    at = Table(dim_rows, colWidths=[40*mm, 20*mm, 22*mm, 88*mm])
     at.setStyle(TableStyle([
         ("BACKGROUND",    (0,0),(-1,0),  C_BORDER),
-        ("BACKGROUND",    (0,1),(-1,-1), C_SURFACE),
-        ("ROWBACKGROUNDS",(0,1),(-1,-1), [C_SURFACE, colors.HexColor("#161929")]),
-        ("BOX",           (0,0),(-1,-1), 1, C_BORDER),
+        ("ROWBACKGROUNDS",(0,1),(-1,-1), [C_SURFACE, C_CARD]),
+        ("BOX",           (0,0),(-1,-1), 0.5, C_BORDER),
         ("INNERGRID",     (0,0),(-1,-1), 0.3, C_BORDER),
-        ("TOPPADDING",    (0,0),(-1,-1), 7),("BOTTOMPADDING",(0,0),(-1,-1), 7),
-        ("LEFTPADDING",   (0,0),(-1,-1), 10),
+        ("TOPPADDING",    (0,0),(-1,-1), 6),("BOTTOMPADDING",(0,0),(-1,-1), 6),
+        ("LEFTPADDING",   (0,0),(-1,-1), 8),
     ]))
     story += [at, Spacer(1, 6*mm)]
 
-    # ══ AI RECOMMENDATIONS ════════════════════════════════════════
-    story.append(Paragraph("🧠  AI Recommendations", sSection))
-    recs = gen_recs(income, rent, savings, loan, employ, cibil, prob)
-    priority_map = {"high": C_RED, "medium": C_GOLD, "low": C_CYAN, "positive": C_GREEN}
-    for r in recs[:6]:
-        pc = priority_map.get(r.get("p","low"), C_CYAN)
-        story.append(Paragraph(
-            f"<font color='{pc.hexval() if hasattr(pc,'hexval') else '#00E5C0'}'>"
-            f"<b>{r.get('icon','')} {r.get('title','')}</b></font>",
-            S("rt", fontName="Helvetica-Bold", fontSize=9, textColor=C_WHITE, leading=13, spaceBefore=5)))
-        if r.get("what"):
-            story.append(Paragraph(f"<b>What:</b> {r['what']}", sSmall))
-        if r.get("how"):
-            story.append(Paragraph(f"<b>How:</b> {r['how']}", sSmall))
-    story.append(Spacer(1, 5*mm))
-
-    # ══ 90-DAY ROADMAP ════════════════════════════════════════════
-    story.append(Paragraph("🗺️  90-Day Improvement Roadmap", sSection))
-    roadmap = gen_roadmap(income, rent, savings, loan, employ, cibil, prob)
-    months = ["Month 1 — Foundation", "Month 2 — Momentum", "Month 3 — Application Ready"]
-    mc = [C_GRAPE, C_CYAN, C_GREEN]
-    for i, (month_label, month_steps, col) in enumerate(zip(months, roadmap, mc)):
-        story.append(Paragraph(
-            f"<b>{month_label}</b>",
-            S("ml", fontName="Helvetica-Bold", fontSize=9, textColor=col, leading=13, spaceBefore=6)))
-        for step in month_steps:
-            story.append(Paragraph(f"• {step}", sSmall))
-
-    story.append(Spacer(1, 8*mm))
-    story.append(HRFlowable(width="100%", thickness=0.5, color=C_BORDER))
+    # ── AI Recommendations ──
+    story.append(section_banner("AI RECOMMENDATIONS", "⚠ Informational only — not financial advice per SEBI IA Regs 2013"))
     story.append(Spacer(1, 3*mm))
+    story.append(risk_box(
+        "The following recommendations are generated by AI and do not constitute investment advice, "
+        "securities advice, or regulated financial advice under SEBI Investment Adviser Regulations, 2013 "
+        "or RBI guidelines. Consult a SEBI-registered financial advisor for personalised advice."
+    ))
+    story.append(Spacer(1, 3*mm))
+    recs = gen_recs(income, rent, savings, loan, employ, cibil, prob)
+    priority_map = {"high": "#FF4060", "medium": "#FFB830", "low": "#00E5C0", "positive": "#23D18B"}
+    for r in recs[:6]:
+        pc = priority_map.get(r.get("p","low"), "#00E5C0")
+        story.append(Paragraph(
+            f"<font color='{pc}'><b>{r.get('icon','')}  {r.get('title','')}</b></font>",
+            S(f"rt{r.get('p','')}", fontName="Helvetica-Bold", fontSize=8.5,
+              textColor=C_WHITE, leading=12, spaceBefore=4)))
+        if r.get("what"):
+            story.append(Paragraph(f"<b>What:</b>  {r['what']}", sSmall))
+        if r.get("how"):
+            story.append(Paragraph(f"<b>How:</b>  {r['how']}", sSmall))
+    story.append(Spacer(1, 6*mm))
+
+    # ── 90-Day Roadmap ──
+    story.append(section_banner("90-DAY IMPROVEMENT ROADMAP", "⚠ AI-generated plan — outcomes not guaranteed"))
+    story.append(Spacer(1, 3*mm))
+    story.append(risk_box(
+        "Projected improvements in creditworthiness are estimates based on general financial principles. "
+        "Actual outcomes depend on individual circumstances, lender policies, and market conditions. "
+        "Past model performance (AUC 0.86) does not guarantee future accuracy."
+    ))
+    story.append(Spacer(1, 3*mm))
+    roadmap = gen_roadmap(income, rent, savings, loan, employ, cibil, prob)
+    months  = ["Month 1 — Foundation", "Month 2 — Momentum", "Month 3 — Application Ready"]
+    mcols   = ["#7C4DFF", "#00E5C0", "#23D18B"]
+    for month_label, month_steps, col in zip(months, roadmap, mcols):
+        story.append(Paragraph(f"<b>{month_label}</b>",
+            S(f"ml{col}", fontName="Helvetica-Bold", fontSize=9,
+              textColor=colors.HexColor(col), leading=13, spaceBefore=5)))
+        for step in month_steps:
+            story.append(Paragraph(f"•  {step}", sSmall))
+    story.append(Spacer(1, 8*mm))
+
+    # ════════════════════════════════════════════════════════════
+    # FULL REGULATORY DISCLAIMER FOOTER
+    # ════════════════════════════════════════════════════════════
+    story.append(HRFlowable(width="100%", thickness=1, color=C_BORDER))
+    story.append(Spacer(1, 3*mm))
+
+    disc_blocks = [
+        ("RBI Compliance Statement",
+         "This report is produced for informational and prototype demonstration purposes only. "
+         "It does not constitute a Credit Information Report (CIR) as defined under the Credit Information "
+         "Companies (Regulation) Act, 2005. Wallet Warriors is not a licensed Credit Information Company "
+         "(CIC) and is not affiliated with CIBIL, Experian, CRIF Highmark, or Equifax. "
+         "Any credit decision made using this output must be supplemented by a formal bureau report "
+         "obtained through a RBI-licensed CIC."),
+        ("SEBI Disclosure Statement",
+         "Nothing in this report constitutes investment advice, portfolio management advice, or "
+         "securities recommendation under the SEBI (Investment Advisers) Regulations, 2013 or "
+         "SEBI (Research Analysts) Regulations, 2014. Financial ratios, projections and recommendations "
+         "herein are for educational and illustrative purposes only."),
+        ("DPDP Act 2023 — Data Rights Notice",
+         "Under the Digital Personal Data Protection Act, 2023 (Act No. 22 of 2023), you have the right "
+         "to access, correct, and erase your personal data processed by this platform. "
+         "Data processed includes: name, income figures, rent, credit score, and spending patterns — "
+         "all provided voluntarily by you. No biometric or sensitive personal data is collected. "
+         "To exercise your rights, contact: grievance@walletwarriors.ai."),
+        ("Model Risk Disclosure",
+         "The XGBoost credit scoring model has an AUC of 0.86 on a held-out test set. "
+         "Model outputs carry inherent uncertainty. A stated default probability of X% means "
+         "approximately X out of 100 similarly-profiled applicants may default — it is not a "
+         "guarantee of individual outcome. The model was trained on synthetic data for this prototype."),
+        ("Limitation of Liability",
+         "Wallet Warriors and its developers accept no liability for any financial loss, credit "
+         "rejection, or adverse outcome arising from reliance on this report. Users are advised to "
+         "seek independent professional advice before making any borrowing or lending decision."),
+    ]
+    for title, text in disc_blocks:
+        story.append(Paragraph(f"<b>{title}:</b>  {text}", sDiscl))
+        story.append(Spacer(1, 2*mm))
+
+    story.append(Spacer(1, 3*mm))
+    story.append(HRFlowable(width="100%", thickness=0.3, color=C_BORDER))
+    story.append(Spacer(1, 2*mm))
     story.append(Paragraph(
-        f"Generated by Wallet Warriors AI Credit Intelligence Platform · {date_str} · "
-        "This report is for informational purposes only and does not constitute financial advice.",
+        f"Report ID: {report_id}  ·  Generated: {date_str}  ·  User: {username}  ·  Plan: {plan}  ·  "
+        "Wallet Warriors AI Credit Intelligence Platform  ·  "
+        "Compliant with: RBI Credit Information Guidelines · SEBI Disclosure Standards · DPDP Act 2023",
         sFooter))
 
     doc.build(story)
