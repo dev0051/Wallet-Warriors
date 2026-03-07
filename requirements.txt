@@ -1,0 +1,13 @@
+streamlit
+pandas
+numpy
+scikit-learn
+xgboost
+shap
+joblib
+plotly
+streamlit-authenticator
+pytesseract
+opencv-python
+pdf2image
+PyYAML
