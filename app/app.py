@@ -5,6 +5,7 @@ v5: Full login fix · Demo credentials restored · 4-feature login panel ·
 """
 
 import streamlit as st
+import streamlit.components.v1 as st_components
 import pandas as pd
 import numpy as np
 import joblib
@@ -260,13 +261,13 @@ html, body,
 [data-testid="stToolbar"],
 [data-testid="stDecoration"] { display: none !important; }
 
-/* ── Zero Streamlit's default block padding ── */
+/* ── Streamlit block padding — top:0 so sticky nav hits the edge ── */
 .block-container,
 .stMainBlockContainer {
   padding-top:    0 !important;
-  padding-bottom: 0 !important;
-  padding-left:   0 !important;
-  padding-right:  0 !important;
+  padding-bottom: 40px !important;
+  padding-left:   48px !important;
+  padding-right:  48px !important;
   max-width: 100% !important;
 }
 
@@ -361,7 +362,7 @@ p, li {
   margin-bottom: 6px !important; display: block !important;
 }
 
-/* ══ INPUTS ══ */
+/* ══ INPUTS — Enhanced ══ */
 [data-testid="stTextInput"] input,
 [data-testid="stNumberInput"] input,
 input[type="text"], input[type="password"],
@@ -373,41 +374,104 @@ input[type="number"], input[type="email"] {
   caret-color: var(--lav) !important;
   font-family: 'Inter', sans-serif !important;
   font-size: 15px !important; font-weight: 500 !important;
-  padding: 13px 16px !important;
-  transition: border-color .16s, box-shadow .16s !important;
+  padding: 14px 16px !important;
+  transition: border-color .16s, box-shadow .16s, background .16s !important;
+  width: 100% !important;
+  min-height: 48px !important;
 }
 [data-testid="stTextInput"] input:focus,
 [data-testid="stNumberInput"] input:focus,
 input:focus {
   border-color: var(--lav) !important;
-  box-shadow: 0 0 0 3px rgba(168,127,255,0.14) !important;
+  box-shadow: 0 0 0 3px rgba(168,127,255,0.16) !important;
   outline: none !important;
-  background: rgba(124,77,255,0.11) !important;
+  background: rgba(124,77,255,0.13) !important;
 }
-input::placeholder { color: rgba(180,192,255,0.22) !important; }
+input::placeholder { color: rgba(180,192,255,0.28) !important; }
+
+/* Number input +/- buttons */
 [data-testid="stNumberInput"] button {
-  background: rgba(124,77,255,0.11) !important;
+  background: rgba(124,77,255,0.14) !important;
   border: 1px solid var(--border) !important;
-  color: var(--lav) !important; border-radius: 7px !important;
+  color: var(--lav) !important;
+  border-radius: 8px !important;
+  min-width: 36px !important; min-height: 36px !important;
+  font-size: 18px !important;
+  transition: background .14s !important;
+}
+[data-testid="stNumberInput"] button:hover {
+  background: var(--grape) !important;
+  color: #fff !important;
+}
+[data-testid="stNumberInput"] > div {
+  gap: 6px !important;
 }
 
-/* ══ FILE UPLOADER ══ */
+/* ══ SELECTBOX — Enhanced ══ */
+[data-testid="stSelectbox"] > div > div {
+  background: rgba(124,77,255,0.07) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 10px !important;
+  color: var(--white) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 14px !important;
+  min-height: 48px !important;
+  transition: border-color .16s, box-shadow .16s !important;
+}
+[data-testid="stSelectbox"] > div > div:focus-within {
+  border-color: var(--lav) !important;
+  box-shadow: 0 0 0 3px rgba(168,127,255,0.16) !important;
+}
+[data-testid="stSelectbox"] svg { color: var(--lav) !important; }
+
+/* Selectbox dropdown menu */
+[data-testid="stSelectbox"] ul,
+div[data-baseweb="popover"] ul {
+  background: #1a1e35 !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+div[data-baseweb="popover"] li {
+  background: transparent !important;
+  color: var(--text) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 14px !important;
+  padding: 10px 16px !important;
+  border-radius: 8px !important;
+}
+div[data-baseweb="popover"] li:hover,
+div[data-baseweb="popover"] li[aria-selected="true"] {
+  background: rgba(124,77,255,0.18) !important;
+  color: var(--white) !important;
+}
+
+/* ══ FILE UPLOADER — Enhanced ══ */
 [data-testid="stFileUploader"] {
   background: rgba(0,229,192,0.03) !important;
   border: 1.5px dashed rgba(0,229,192,0.26) !important;
-  border-radius: 11px !important; padding: 12px !important;
+  border-radius: 12px !important; padding: 16px !important;
+  transition: border-color .16s, background .16s !important;
+}
+[data-testid="stFileUploader"]:hover {
+  border-color: rgba(0,229,192,0.50) !important;
+  background: rgba(0,229,192,0.06) !important;
 }
 [data-testid="stFileUploader"] > label { color: var(--cyan) !important; }
+[data-testid="stFileUploaderDropzoneInstructions"] {
+  color: var(--muted) !important; font-size: 13px !important;
+}
 
-/* ══ BUTTONS ══ */
+/* ══ BUTTONS — Enhanced ══ */
 .stButton > button {
   background: linear-gradient(135deg, #7C4DFF 0%, #5030CC 100%) !important;
   color: #fff !important;
   border: 1.5px solid rgba(168,127,255,0.32) !important;
-  border-radius: 10px !important;
+  border-radius: 12px !important;
   font-family: 'Inter', sans-serif !important;
   font-size: 15px !important; font-weight: 700 !important;
-  letter-spacing: .01em !important; padding: 13px 28px !important;
+  letter-spacing: .01em !important;
+  padding: 14px 28px !important;
+  min-height: 52px !important;
   width: 100% !important; cursor: pointer !important;
   transition: all .18s ease !important;
   box-shadow: 0 4px 22px rgba(124,77,255,0.28) !important;
@@ -419,6 +483,37 @@ input::placeholder { color: rgba(180,192,255,0.22) !important; }
   border-color: rgba(168,127,255,0.55) !important;
 }
 .stButton > button:active { transform: translateY(0) !important; }
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 768px) {
+  .block-container, .stMainBlockContainer {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-bottom: 24px !important;
+  }
+  h1, .h1 { font-size: 28px !important; }
+  h2, .h2 { font-size: 20px !important; }
+  h3, .h3 { font-size: 17px !important; }
+  [data-testid="stTabs"] [role="tab"] {
+    font-size: 11px !important;
+    padding: 8px 10px !important;
+  }
+  [data-testid="stMetricValue"] > div { font-size: 22px !important; }
+  .stButton > button {
+    font-size: 14px !important;
+    padding: 12px 16px !important;
+    min-height: 48px !important;
+  }
+  [data-testid="stNumberInput"] input,
+  [data-testid="stTextInput"] input {
+    font-size: 16px !important;
+    min-height: 52px !important;
+  }
+  [data-testid="stSelectbox"] > div > div {
+    min-height: 52px !important;
+    font-size: 16px !important;
+  }
+}
 
 /* ══ METRIC CARDS ══ */
 [data-testid="stMetric"] {
@@ -712,12 +807,13 @@ def panel_open(tag_label, title, subtitle="", border_color=None):
     tag_color = CYAN if "C —" in tag_label else LAV
     tag_fg = "#080c1a"
     sub_html = (f'<p style="font-family:\'Inter\',sans-serif;font-size:13.5px;font-weight:400;'
-                f'color:{TEXT};margin:5px 0 14px;line-height:1.60;">{subtitle}</p>') if subtitle else '<div style="height:10px;"></div>'
+                f'color:{TEXT};margin:5px 0 6px;line-height:1.60;">{subtitle}</p>') if subtitle else ""
     st.markdown(f"""
     <div style="background:{SURFACE};border:1.5px solid {bc};
-                border-radius:14px;padding:20px 26px 8px;margin-bottom:16px;
-                box-shadow:0 4px 20px rgba(0,0,0,0.30);">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                border-radius:14px 14px 0 0;padding:16px 26px 12px;
+                margin-bottom:0;box-shadow:0 2px 0 rgba(0,0,0,0.10);
+                border-bottom:1px solid rgba(124,77,255,0.10);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
         <span style="background:{tag_color};color:{tag_fg};
                      font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
                      letter-spacing:.12em;padding:3px 11px;border-radius:99px;
@@ -726,10 +822,16 @@ def panel_open(tag_label, title, subtitle="", border_color=None):
       <h3 style="font-family:'Inter',sans-serif;font-size:17px;font-weight:700;
                  color:{WHITE};margin:3px 0 0;letter-spacing:-0.012em;">{title}</h3>
       {sub_html}
+    </div>
     """, unsafe_allow_html=True)
 
 def panel_close():
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="background:{SURFACE};border:1.5px solid {BORDER};border-top:none;'
+        f'border-radius:0 0 14px 14px;padding:6px 26px 14px;margin-bottom:16px;'
+        f'box-shadow:0 4px 20px rgba(0,0,0,0.30);"></div>',
+        unsafe_allow_html=True
+    )
 
 # ─────────────────────────────────────────────────────────────
 # TRIANGULATION ENGINE
@@ -1003,57 +1105,97 @@ def render_nav():
         vc = GREEN if vr["coherent"] else RED
         vl = "✓ Verified" if vr["coherent"] else "⚠ Review Required"
         ver_html = (f'<span style="background:{vc}1a;color:{vc};border:1px solid {vc}44;'
-                    f'font-family:\'JetBrains Mono\',monospace;font-size:10.5px;font-weight:700;'
+                    f'font-family:JetBrains Mono,monospace;font-size:10.5px;font-weight:700;'
                     f'letter-spacing:.07em;padding:4px 13px;border-radius:99px;'
                     f'text-transform:uppercase;">{vl}</span>')
-    name = st.session_state.username
-    plan = st.session_state.plan
+    name  = st.session_state.username
+    plan  = st.session_state.plan
     initial = name[0].upper() if name else "D"
 
-    st.markdown(f"""
-    <div style="background:rgba(15,17,23,0.96);backdrop-filter:blur(24px);
-                -webkit-backdrop-filter:blur(24px);
-                border-bottom:1px solid rgba(108,63,255,0.18);
-                padding:0 48px;height:62px;display:flex;align-items:center;
-                justify-content:space-between;position:sticky;top:0;z-index:999;
-                box-shadow:0 1px 0 rgba(108,63,255,0.12),0 4px 24px rgba(0,0,0,0.50);">
-      <!-- LOGO -->
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:34px;height:34px;
-                    background:linear-gradient(135deg,{GRAPE},{CYAN});
-                    border-radius:9px;display:flex;align-items:center;justify-content:center;
-                    font-size:16px;box-shadow:0 0 18px rgba(108,63,255,0.50);">⚡</div>
-        <div>
-          <span style="font-family:'Inter',sans-serif;font-weight:800;font-size:17px;
-                       color:{WHITE};letter-spacing:-0.02em;">Wallet Warriors</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:{MUTED2};
-                       letter-spacing:.10em;margin-left:8px;text-transform:uppercase;">
-            Credit Intelligence</span>
-        </div>
-      </div>
-      <!-- RIGHT SIDE -->
-      <div style="display:flex;align-items:center;gap:12px;">
-        {ver_html}
-        <!-- User pill -->
-        <div style="display:flex;align-items:center;gap:8px;
-                    background:rgba(108,63,255,0.12);
-                    border:1px solid rgba(108,63,255,0.22);
-                    border-radius:99px;padding:5px 13px 5px 6px;">
-          <div style="width:26px;height:26px;
-                      background:linear-gradient(135deg,{GRAPE},{LAV});
-                      border-radius:50%;display:flex;align-items:center;justify-content:center;
-                      font-family:'Inter',sans-serif;font-size:11px;font-weight:800;color:#fff;">
-            {initial}</div>
-          <span style="font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;
-                       color:{WHITE};max-width:120px;overflow:hidden;text-overflow:ellipsis;
-                       white-space:nowrap;">{name}</span>
-          <span style="background:{GRAPE};color:#fff;font-family:'JetBrains Mono',monospace;
-                       font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:99px;
-                       text-transform:uppercase;">{plan}</span>
-        </div>
+    # Use st_components.html to completely bypass Streamlit's HTML sanitiser
+    nav_html = f"""<!DOCTYPE html>
+<html><head><style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&family=JetBrains+Mono:wght@700&display=swap');
+  * {{ margin:0; padding:0; box-sizing:border-box; }}
+  body {{ background:transparent; overflow:hidden; }}
+  .nav {{
+    background:rgba(15,17,23,0.96);
+    backdrop-filter:blur(24px);
+    -webkit-backdrop-filter:blur(24px);
+    border-bottom:1px solid rgba(108,63,255,0.18);
+    padding:0 48px;
+    height:62px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    box-shadow:0 1px 0 rgba(108,63,255,0.12),0 4px 24px rgba(0,0,0,0.50);
+    font-family:Inter,sans-serif;
+  }}
+  .logo-wrap {{ display:flex; align-items:center; gap:12px; }}
+  .logo-icon {{
+    width:34px; height:34px;
+    background:linear-gradient(135deg,{GRAPE},{CYAN});
+    border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+    box-shadow:0 0 18px rgba(108,63,255,0.50);
+  }}
+  .logo-name {{
+    font-weight:800; font-size:17px;
+    color:{WHITE}; letter-spacing:-0.02em;
+  }}
+  .logo-sub {{
+    font-family:JetBrains Mono,monospace;
+    font-size:9.5px; color:rgba(180,192,255,0.32);
+    letter-spacing:.10em; margin-left:8px; text-transform:uppercase;
+  }}
+  .right {{ display:flex; align-items:center; gap:12px; }}
+  .pill {{
+    display:flex; align-items:center; gap:8px;
+    background:rgba(108,63,255,0.12);
+    border:1px solid rgba(108,63,255,0.22);
+    border-radius:99px; padding:5px 13px 5px 6px;
+  }}
+  .avatar {{
+    width:26px; height:26px;
+    background:linear-gradient(135deg,{GRAPE},{LAV});
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:800; color:#fff;
+  }}
+  .uname {{
+    font-size:13.5px; font-weight:600;
+    color:{WHITE}; max-width:120px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }}
+  .plan-badge {{
+    background:{GRAPE}; color:#fff;
+    font-family:JetBrains Mono,monospace;
+    font-size:9.5px; font-weight:700;
+    padding:2px 8px; border-radius:99px;
+    text-transform:uppercase;
+  }}
+</style></head>
+<body>
+  <div class="nav">
+    <div class="logo-wrap">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <span class="logo-name">Wallet Warriors</span>
+        <span class="logo-sub">Credit Intelligence</span>
       </div>
     </div>
-    """, unsafe_allow_html=True)
+    <div class="right">
+      {ver_html}
+      <div class="pill">
+        <div class="avatar">{initial}</div>
+        <span class="uname">{name}</span>
+        <span class="plan-badge">{plan}</span>
+      </div>
+    </div>
+  </div>
+</body></html>"""
+    st_components.html(nav_html, height=64, scrolling=False)
 
     with st.sidebar:
         st.markdown(f"""
@@ -1069,7 +1211,6 @@ def render_nav():
                 Credit Intelligence</div>
             </div>
           </div>
-          <!-- User card -->
           <div style="background:rgba(108,63,255,0.10);border-radius:12px;padding:14px 16px;
                       margin-bottom:16px;border:1px solid rgba(108,63,255,0.18);">
             <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:{MUTED};
@@ -1079,97 +1220,20 @@ def render_nav():
             <div style="font-family:'JetBrains Mono',monospace;font-size:11px;
                         color:{LAV};margin-top:3px;">{plan} Plan</div>
           </div>
+          <div style="font-family:'Inter',sans-serif;font-size:12.5px;color:{MUTED};
+                      line-height:1.6;padding:0 4px 16px;">
+            📊 AI Credit Intelligence<br/>
+            🔬 Income Triangulation<br/>
+            🎯 Approval Readiness<br/>
+            🕵️ Thin File Engine<br/>
+            📄 Regulatory PDF Report
+          </div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("← Sign Out", key="so"):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
             st.rerun()
-
-        # ── FEATURE 2: HUSTLE ACADEMY ────────────────────────────
-        st.markdown(f"""
-        <div style="margin:8px 0 4px;padding:0 4px;">
-          <div style="height:1px;background:linear-gradient(90deg,transparent,
-                      rgba(124,77,255,0.28),transparent);margin-bottom:14px;"></div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-            <span style="font-size:15px;">🎓</span>
-            <span style="font-family:'Inter',sans-serif;font-size:13.5px;font-weight:700;
-                         color:{WHITE};">Hustle Academy</span>
-          </div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:{MUTED};
-                      text-transform:uppercase;letter-spacing:.09em;margin-bottom:10px;">
-            Financial Literacy · 3 Modules</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        with st.expander("📐 Master Your Debt-to-Income Ratio"):
-            st.markdown(f"""
-            <div style="font-family:'Inter',sans-serif;font-size:13.5px;
-                        color:{TEXT};line-height:1.70;padding:4px 0;">
-              <p style="margin:0 0 10px;font-weight:700;color:{WHITE};font-size:14px;">
-                Your DTI is a lender's first filter — and it's binary.</p>
-              <p style="margin:0 0 10px;">
-                Add up all your fixed monthly payments: rent, existing EMIs, and the new loan EMI
-                you're applying for. Divide by net monthly income. If the result exceeds
-                <strong style="color:{RED};">65%</strong>, most scheduled banks auto-reject with no review.</p>
-              <p style="margin:0 0 10px;">
-                <strong style="color:{CYAN};">The fix:</strong> Before applying, either extend your loan
-                tenure (lower EMI), pay off a smaller existing loan entirely, or add a co-applicant
-                to split the obligation. Each tactic directly reduces your DTI.</p>
-              <p style="margin:0;background:rgba(124,77,255,0.10);border-radius:8px;
-                         border-left:3px solid {GRAPE};padding:10px 12px;
-                         font-size:12.5px;color:{TEXT};">
-                💡 <strong>Rule of thumb:</strong> Target DTI below 45% for best-rate approval.
-                Between 45–65% you'll qualify but at higher interest.
-              </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with st.expander("💸 Consistency Beats Quantity in UPI"):
-            st.markdown(f"""
-            <div style="font-family:'Inter',sans-serif;font-size:13.5px;
-                        color:{TEXT};line-height:1.70;padding:4px 0;">
-              <p style="margin:0 0 10px;font-weight:700;color:{WHITE};font-size:14px;">
-                Underwriters read your UPI history like a personality test.</p>
-              <p style="margin:0 0 10px;">
-                A ₹50,000 single transaction means nothing. But 90 days of regular, predictable
-                outflows — rent on the 1st, subscriptions on the 5th, groceries weekly — tells an
-                underwriter you are organised, solvent, and behaviorally stable.</p>
-              <p style="margin:0 0 10px;">
-                <strong style="color:{CYAN};">The pattern they love:</strong> Income credited →
-                Savings transferred within 48 hrs → Fixed bills paid on schedule.
-                This sequencing signals financial maturity regardless of income level.</p>
-              <p style="margin:0;background:rgba(0,229,192,0.08);border-radius:8px;
-                         border-left:3px solid {CYAN};padding:10px 12px;
-                         font-size:12.5px;color:{TEXT};">
-                💡 <strong>Start today:</strong> Automate one SIP and one bill payment.
-                Three months of that pattern is worth more than a salary hike on paper.
-              </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with st.expander("🏦 Credit Invisible → Bankable in 90 Days"):
-            st.markdown(f"""
-            <div style="font-family:'Inter',sans-serif;font-size:13.5px;
-                        color:{TEXT};line-height:1.70;padding:4px 0;">
-              <p style="margin:0 0 10px;font-weight:700;color:{WHITE};font-size:14px;">
-                No CIBIL score isn't the same as a bad score — but it looks the same to most banks.</p>
-              <p style="margin:0 0 10px;">
-                If you're a student, freelancer, or first-time earner with no credit history,
-                you're "credit invisible." Banks can't assess you, so they decline by default.</p>
-              <p style="margin:0 0 10px;">
-                <strong style="color:{CYAN};">The 90-day ladder:</strong><br/>
-                <strong style="color:{GOLD};">Month 1</strong> — Open a secured credit card (₹10k–25k FD as collateral). Use it for fuel only.<br/>
-                <strong style="color:{GOLD};">Month 2</strong> — Pay the full balance before due date. Never the minimum.<br/>
-                <strong style="color:{GOLD};">Month 3</strong> — CIBIL generates your first score. It will be 700+.</p>
-              <p style="margin:0;background:rgba(255,184,48,0.08);border-radius:8px;
-                         border-left:3px solid {GOLD};padding:10px 12px;
-                         font-size:12.5px;color:{TEXT};">
-                💡 <strong>Gig workers:</strong> File your ITR even for small incomes.
-                Two years of ITR history is accepted by NBFCs as income proof for personal loans.
-              </p>
-            </div>
-            """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
 # ██  LOGIN PAGE  ██
@@ -1389,7 +1453,8 @@ def render_login():
 # ─────────────────────────────────────────────────────────────
 def render_onboard():
     render_nav()
-    st.markdown(f'<div style="padding:24px 48px 40px;background:{BG};">', unsafe_allow_html=True)
+    st.markdown('<div style="height:24px;"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # ── Step progress indicator ──
     steps = [("1", "Income Data", True), ("2", "Verification", False), ("3", "Analysis", False)]
@@ -1496,7 +1561,7 @@ def render_onboard():
             st.session_state.page = "verify_result"
             st.rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
 # ██  VERIFICATION RESULT  ██
@@ -1504,7 +1569,8 @@ def render_onboard():
 def render_verify_result():
     vr = st.session_state.vr
     render_nav()
-    st.markdown(f'<div style="padding:24px 48px 40px;background:{BG};">', unsafe_allow_html=True)
+    st.markdown('<div style="height:24px;"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
     section_header("Verification Result", "Income triangulation engine output", "🔬")
 
     ok = vr["coherent"]; conf = vr["confidence"]
@@ -1629,16 +1695,17 @@ def render_verify_result():
                 Resolve all high-severity anomalies above and re-submit for verification.</p>
             </div>""", unsafe_allow_html=True)
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
 # ██  DASHBOARD  ██
 # ─────────────────────────────────────────────────────────────
 def render_dashboard():
     render_nav()
+    st.markdown('<div style="height:24px;"></div>', unsafe_allow_html=True)
     ud = st.session_state.ud
     vc = ud.get("confidence", 80)
-    st.markdown(f'<div style="padding:24px 48px 40px;background:{BG};">', unsafe_allow_html=True)
+    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # ── Dashboard header ──
     st.markdown(f"""
@@ -1692,7 +1759,7 @@ def render_dashboard():
                      help="No CIBIL score? Use our Behavioral Underwriting engine instead."):
             st.session_state.page = "thin_file"
             st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
 
     run = st.button("Run AI Credit Analysis  →", key="btn_run")
 
@@ -2104,7 +2171,6 @@ def render_dashboard():
                                  padding:4px 12px;border-radius:99px;text-transform:uppercase;
                                  letter-spacing:.07em;white-space:nowrap;">{urgency}</span>
                   </div>
-                  <!-- What section -->
                   <div style="background:rgba(108,63,255,0.07);border-radius:9px;
                               padding:14px 16px;margin-bottom:10px;">
                     <p style="font-family:'JetBrains Mono',monospace;font-size:10px;
@@ -2114,7 +2180,6 @@ def render_dashboard():
                                color:#C8D0F0;margin:0;line-height:1.70;">
                       {rec['what']}</p>
                   </div>
-                  <!-- How section -->
                   <div style="background:{pc}12;border-radius:9px;padding:14px 16px;
                               border:1px solid {pc}22;">
                     <p style="font-family:'JetBrains Mono',monospace;font-size:10px;
@@ -2552,14 +2617,107 @@ def render_dashboard():
                 key="btn_pdf",
             )
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
+
+    # ══ HUSTLE ACADEMY — inline section (safe from sanitiser) ══
+    st.divider()
+    st.markdown(f"""
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <span style="font-size:22px;">🎓</span>
+      <h2 style="font-family:'Inter',sans-serif;font-size:22px;font-weight:800;
+                 color:{WHITE};margin:0;letter-spacing:-0.02em;">Hustle Academy</h2>
+      <span style="background:{GRAPE};color:#fff;font-family:'JetBrains Mono',monospace;
+                   font-size:9px;font-weight:700;padding:3px 10px;border-radius:99px;
+                   text-transform:uppercase;letter-spacing:.10em;">Financial Literacy · 3 Modules</span>
+    </div>
+    <p style="font-family:'Inter',sans-serif;font-size:14px;color:{MUTED};margin:0 0 16px;">
+      Master the concepts lenders actually use — so you walk in prepared, not surprised.</p>
+    """, unsafe_allow_html=True)
+
+    with st.expander("📐 Module 1 — Master Your Debt-to-Income Ratio"):
+        st.markdown(f"""
+        <div style="font-family:'Inter',sans-serif;font-size:14px;color:{TEXT};line-height:1.75;padding:4px 0 8px;">
+          <p style="margin:0 0 10px;font-weight:700;color:{WHITE};font-size:15px;">
+            Your DTI is a lender's first filter — and it's binary.</p>
+          <p style="margin:0 0 10px;">
+            Add up all your fixed monthly payments: rent, existing EMIs, and the new loan EMI
+            you're applying for. Divide by net monthly income. If the result exceeds
+            <strong style="color:{RED};">65%</strong>, most scheduled banks auto-reject with no review.</p>
+          <p style="margin:0 0 12px;">
+            <strong style="color:{CYAN};">The fix:</strong> Before applying, either extend your loan
+            tenure (lower EMI), pay off a smaller existing loan entirely, or add a co-applicant
+            to split the obligation. Each tactic directly reduces your DTI.</p>
+          <div style="background:rgba(124,77,255,0.10);border-radius:10px;
+                      border-left:3px solid {GRAPE};padding:12px 16px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+                         color:{LAV};letter-spacing:.10em;text-transform:uppercase;">Rule of Thumb</span>
+            <p style="margin:6px 0 0;font-size:13.5px;color:{TEXT};">
+              Target DTI below <strong style="color:{GREEN};">45%</strong> for best-rate approval.
+              Between 45–65% you'll qualify but at higher interest.
+              Above 65% = automatic rejection at most banks.</p>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with st.expander("💸 Module 2 — Consistency Beats Quantity in UPI"):
+        st.markdown(f"""
+        <div style="font-family:'Inter',sans-serif;font-size:14px;color:{TEXT};line-height:1.75;padding:4px 0 8px;">
+          <p style="margin:0 0 10px;font-weight:700;color:{WHITE};font-size:15px;">
+            Underwriters read your UPI history like a personality test.</p>
+          <p style="margin:0 0 10px;">
+            A ₹50,000 single transaction means nothing. But 90 days of regular, predictable
+            outflows — rent on the 1st, subscriptions on the 5th, groceries weekly — tells an
+            underwriter you are organised, solvent, and behaviourally stable.</p>
+          <p style="margin:0 0 12px;">
+            <strong style="color:{CYAN};">The pattern they love:</strong> Income credited →
+            Savings transferred within 48 hrs → Fixed bills paid on schedule.
+            This sequencing signals financial maturity regardless of income level.</p>
+          <div style="background:rgba(0,229,192,0.08);border-radius:10px;
+                      border-left:3px solid {CYAN};padding:12px 16px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+                         color:{CYAN};letter-spacing:.10em;text-transform:uppercase;">Start Today</span>
+            <p style="margin:6px 0 0;font-size:13.5px;color:{TEXT};">
+              Automate one SIP and one bill payment.
+              Three months of that pattern is worth more than a salary hike on paper.</p>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with st.expander("🏦 Module 3 — Credit Invisible → Bankable in 90 Days"):
+        st.markdown(f"""
+        <div style="font-family:'Inter',sans-serif;font-size:14px;color:{TEXT};line-height:1.75;padding:4px 0 8px;">
+          <p style="margin:0 0 10px;font-weight:700;color:{WHITE};font-size:15px;">
+            No CIBIL score isn't the same as a bad score — but it looks the same to most banks.</p>
+          <p style="margin:0 0 10px;">
+            If you're a student, freelancer, or first-time earner with no credit history,
+            you're "credit invisible." Banks can't assess you, so they decline by default.</p>
+          <p style="margin:0 0 4px;"><strong style="color:{CYAN};">The 90-day ladder:</strong></p>
+          <p style="margin:0 0 4px;">
+            <strong style="color:{GOLD};">Month 1</strong> — Open a secured credit card (₹10k–25k FD as collateral). Use it for fuel only.</p>
+          <p style="margin:0 0 4px;">
+            <strong style="color:{GOLD};">Month 2</strong> — Pay the full balance before due date. Never the minimum.</p>
+          <p style="margin:0 0 14px;">
+            <strong style="color:{GOLD};">Month 3</strong> — CIBIL generates your first score. It will be 700+.</p>
+          <div style="background:rgba(255,184,48,0.08);border-radius:10px;
+                      border-left:3px solid {GOLD};padding:12px 16px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+                         color:{GOLD};letter-spacing:.10em;text-transform:uppercase;">Gig Workers</span>
+            <p style="margin:6px 0 0;font-size:13.5px;color:{TEXT};">
+              File your ITR even for small incomes.
+              Two years of ITR history is accepted by NBFCs as income proof for personal loans.</p>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div style="height:20px;"></div>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
 # ██  THIN FILE — BEHAVIORAL UNDERWRITING  ██
 # ─────────────────────────────────────────────────────────────
 def render_thin_file():
     render_nav()
-    st.markdown(f'<div style="padding:24px 48px 40px;background:{BG};">', unsafe_allow_html=True)
+    st.markdown('<div style="height:24px;"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # ── Hero header ──
     st.markdown(f"""
@@ -2869,7 +3027,7 @@ def render_thin_file():
             st.session_state.page = "dashboard"
             st.rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -3200,7 +3358,7 @@ def generate_pdf_report(res, ud, username, plan):
         Paragraph("<b>Pillar</b>",  S("th1", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11)),
         Paragraph("<b>Score</b>",   S("th2", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11, alignment=TA_CENTER)),
         Paragraph("<b>Status</b>",  S("th3", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11, alignment=TA_CENTER)),
-        Paragraph("<b>RBI Benchmark</b>", S("th4", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading  =11)),
+        Paragraph("<b>RBI Benchmark</b>", S("th4", fontName="Helvetica-Bold", fontSize=7.5, textColor=C_MUTED, leading=11)),
     ]]
     benchmarks = {
         "income_stability": "Stable salary / verified inflow required",
