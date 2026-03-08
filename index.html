@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Wallet Warriors — AI Credit Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:      #080a14;
+  --surface: #0f1221;
+  --card:    #131729;
+  --grape:   #7C4DFF;
+  --lav:     #A87FFF;
+  --cyan:    #00E5C0;
+  --gold:    #FFB830;
+  --green:   #23D18B;
+  --red:     #FF4060;
+  --white:   #ECF0FF;
+  --text:    #B8C2E8;
+  --muted:   rgba(180,192,255,0.45);
+  --border:  rgba(124,77,255,0.20);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* ── GRID BACKGROUND ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(124,77,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,77,255,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+/* ── GLOW ORBS ── */
+.orb {
+  position: fixed; border-radius: 50%; filter: blur(120px);
+  pointer-events: none; z-index: 0;
+}
+.orb-1 { width: 600px; height: 600px; background: rgba(124,77,255,0.12); top:-200px; left:-200px; }
+.orb-2 { width: 500px; height: 500px; background: rgba(0,229,192,0.07); bottom:-150px; right:-150px; }
+.orb-3 { width: 400px; height: 400px; background: rgba(255,184,48,0.05); top:40%; left:50%; transform:translate(-50%,-50%); }
+
+/* ── WRAPPER ── */
+.wrapper {
+  position: relative; z-index: 1;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* ── HEADER ── */
+.header {
+  padding: 64px 0 48px;
+  text-align: center;
+}
+
+.hackathon-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, rgba(255,184,48,0.15), rgba(255,184,48,0.06));
+  border: 1px solid rgba(255,184,48,0.35);
+  border-radius: 99px;
+  padding: 6px 18px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  color: var(--gold);
+  letter-spacing: .12em; text-transform: uppercase;
+  margin-bottom: 32px;
+  animation: pulse-gold 3s ease-in-out infinite;
+}
+@keyframes pulse-gold {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,184,48,0); }
+  50%      { box-shadow: 0 0 24px 4px rgba(255,184,48,0.18); }
+}
+
+.logo-row {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  margin-bottom: 20px;
+}
+.logo-icon {
+  width: 56px; height: 56px;
+  background: linear-gradient(135deg, var(--grape), var(--cyan));
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  box-shadow: 0 0 40px rgba(124,77,255,0.50), 0 0 80px rgba(0,229,192,0.20);
+  animation: float 4s ease-in-out infinite;
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+.site-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(42px, 8vw, 68px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  background: linear-gradient(135deg, var(--white) 0%, var(--lav) 50%, var(--cyan) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+
+.site-sub {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px; font-weight: 700;
+  color: var(--muted); letter-spacing: .18em; text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.tagline {
+  font-size: 18px; font-weight: 400;
+  color: var(--text); line-height: 1.65;
+  max-width: 540px; margin: 0 auto 40px;
+}
+.tagline strong { color: var(--white); font-weight: 600; }
+
+/* ── DIVIDER ── */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(124,77,255,0.35), rgba(0,229,192,0.25), transparent);
+  margin: 48px 0;
+}
+
+/* ── SECTION LABEL ── */
+.sec-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; font-weight: 700;
+  color: var(--cyan); letter-spacing: .20em; text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(0,229,192,0.25), transparent);
+}
+
+.sec-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(24px, 4vw, 32px); font-weight: 800;
+  letter-spacing: -0.02em; line-height: 1.15;
+  color: var(--white); margin-bottom: 14px;
+}
+
+.sec-body {
+  font-size: 15px; color: var(--text); line-height: 1.75;
+  margin-bottom: 8px;
+}
+.sec-body strong { color: var(--white); }
+
+/* ── PROBLEM CARDS ── */
+.problem-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin: 24px 0;
+}
+@media(max-width:560px){ .problem-grid { grid-template-columns: 1fr; } }
+
+.problem-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px;
+  position: relative; overflow: hidden;
+  transition: border-color .2s, transform .2s;
+}
+.problem-card:hover { border-color: rgba(124,77,255,0.45); transform: translateY(-3px); }
+.problem-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--grape), var(--lav));
+}
+.problem-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  color: var(--grape); letter-spacing: .10em;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.problem-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px; font-weight: 700;
+  color: var(--white); margin-bottom: 6px;
+}
+.problem-body { font-size: 13.5px; color: var(--text); line-height: 1.60; }
+
+/* ── CTA BUTTONS ── */
+.cta-row {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  margin: 32px 0;
+}
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, var(--grape), #5030CC);
+  color: #fff; font-family: 'Syne', sans-serif;
+  font-size: 15px; font-weight: 700;
+  padding: 14px 28px; border-radius: 12px;
+  text-decoration: none; border: 1.5px solid rgba(168,127,255,0.30);
+  box-shadow: 0 4px 28px rgba(124,77,255,0.40);
+  transition: all .18s; white-space: nowrap;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--lav), var(--grape));
+  box-shadow: 0 8px 40px rgba(168,127,255,0.50);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: rgba(0,229,192,0.08);
+  color: var(--cyan); font-family: 'Syne', sans-serif;
+  font-size: 15px; font-weight: 700;
+  padding: 14px 28px; border-radius: 12px;
+  text-decoration: none; border: 1.5px solid rgba(0,229,192,0.30);
+  transition: all .18s; white-space: nowrap;
+}
+.btn-secondary:hover {
+  background: rgba(0,229,192,0.14);
+  border-color: rgba(0,229,192,0.55);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,229,192,0.20);
+}
+
+/* ── DEMO CARD ── */
+.demo-card {
+  background: var(--surface);
+  border: 1px solid rgba(0,229,192,0.22);
+  border-radius: 20px; padding: 28px 32px;
+  position: relative; overflow: hidden;
+}
+.demo-card::after {
+  content: 'LIVE DEMO'; position: absolute;
+  top: 18px; right: -28px;
+  background: var(--cyan); color: #080a14;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: .14em; padding: 4px 40px;
+  transform: rotate(45deg);
+}
+.demo-cred-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 20px;
+}
+@media(max-width:480px){ .demo-cred-row { grid-template-columns: 1fr; } }
+
+.cred-field {
+  background: rgba(124,77,255,0.07);
+  border: 1px solid rgba(124,77,255,0.22);
+  border-radius: 10px; padding: 12px 16px;
+}
+.cred-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  color: var(--muted); letter-spacing: .15em;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.cred-value {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px; font-weight: 700; color: var(--white);
+}
+.cred-value.highlight { color: var(--lav); }
+
+/* ── FEATURE GRID ── */
+.feature-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; margin: 24px 0;
+}
+@media(max-width:560px){ .feature-grid { grid-template-columns: 1fr; } }
+
+.feature-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px 20px;
+  transition: border-color .2s, transform .2s;
+  cursor: default;
+}
+.feature-card:hover {
+  border-color: rgba(168,127,255,0.40);
+  transform: translateY(-2px);
+}
+.feature-icon { font-size: 22px; margin-bottom: 8px; }
+.feature-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px; font-weight: 700;
+  color: var(--white); margin-bottom: 4px;
+}
+.feature-desc { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+/* ── TECH STACK ── */
+.stack-row {
+  display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0;
+}
+.stack-chip {
+  background: rgba(124,77,255,0.10);
+  border: 1px solid rgba(124,77,255,0.22);
+  border-radius: 8px; padding: 6px 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px; font-weight: 700; color: var(--lav);
+  letter-spacing: .04em;
+  transition: background .15s, border-color .15s;
+}
+.stack-chip:hover {
+  background: rgba(124,77,255,0.20);
+  border-color: rgba(168,127,255,0.45);
+}
+.stack-chip.cyan {
+  background: rgba(0,229,192,0.08);
+  border-color: rgba(0,229,192,0.22); color: var(--cyan);
+}
+.stack-chip.cyan:hover {
+  background: rgba(0,229,192,0.16);
+  border-color: rgba(0,229,192,0.45);
+}
+.stack-chip.gold {
+  background: rgba(255,184,48,0.08);
+  border-color: rgba(255,184,48,0.22); color: var(--gold);
+}
+
+/* ── STATS ROW ── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 14px; margin: 24px 0;
+}
+@media(max-width:560px){ .stats-row { grid-template-columns: 1fr 1fr; } }
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px 16px;
+  text-align: center;
+}
+.stat-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px; font-weight: 800;
+  background: linear-gradient(135deg, var(--lav), var(--cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; line-height: 1.1; margin-bottom: 4px;
+}
+.stat-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 9.5px; font-weight: 700;
+  color: var(--muted); letter-spacing: .12em; text-transform: uppercase;
+}
+
+/* ── QUOTE BOX ── */
+.quote-box {
+  background: linear-gradient(135deg, rgba(124,77,255,0.10), rgba(0,229,192,0.05));
+  border: 1px solid rgba(124,77,255,0.25);
+  border-left: 3px solid var(--grape);
+  border-radius: 0 14px 14px 0;
+  padding: 20px 24px; margin: 24px 0;
+}
+.quote-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px; font-weight: 600;
+  color: var(--white); line-height: 1.55;
+  font-style: italic;
+}
+.quote-attr {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; font-weight: 700;
+  color: var(--grape); letter-spacing: .12em;
+  text-transform: uppercase; margin-top: 10px;
+}
+
+/* ── REGULATION BADGES ── */
+.reg-row {
+  display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0;
+}
+.reg-badge {
+  background: rgba(35,209,139,0.08);
+  border: 1px solid rgba(35,209,139,0.25);
+  border-radius: 8px; padding: 6px 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px; font-weight: 700; color: var(--green);
+  letter-spacing: .06em;
+}
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center;
+  padding: 48px 0 32px;
+  border-top: 1px solid rgba(124,77,255,0.14);
+  margin-top: 64px;
+}
+.footer-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px; font-weight: 800;
+  background: linear-gradient(135deg, var(--grape), var(--cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; margin-bottom: 8px;
+}
+.footer-sub {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; color: var(--muted);
+  letter-spacing: .16em; text-transform: uppercase;
+}
+
+/* ── SCROLL REVEAL ── */
+.reveal {
+  opacity: 0; transform: translateY(28px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── COPY BUTTON ── */
+.copy-wrap { position: relative; display: inline-block; }
+.copy-btn {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  background: rgba(124,77,255,0.20); border: 1px solid rgba(124,77,255,0.30);
+  border-radius: 6px; padding: 3px 10px;
+  font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700;
+  color: var(--lav); cursor: pointer; transition: background .14s;
+}
+.copy-btn:hover { background: rgba(124,77,255,0.40); }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="wrapper">
+
+  <!-- ══ HEADER ══ -->
+  <header class="header reveal">
+    <div class="hackathon-tag">
+      🏆 &nbsp; Built at Hackathon &nbsp; · &nbsp; AI/FinTech Track
+    </div>
+    <div class="logo-row">
+      <div class="logo-icon">⚡</div>
+    </div>
+    <h1 class="site-title">Wallet Warriors</h1>
+    <p class="site-sub">AI Credit Intelligence Platform</p>
+    <p class="tagline">
+      <strong>Know your loan odds before you apply.</strong> We built an AI underwriter
+      that gives every borrower — including the 190 million with no credit history —
+      the same intelligence a bank's risk team uses.
+    </p>
+
+    <div class="cta-row" style="justify-content:center;">
+      <a href="https://walletwarriors.streamlit.app" target="_blank" class="btn-primary">
+        🌐 &nbsp; Live Demo
+      </a>
+      <a href="https://github.com/dev0051/Wallet-Warriors" target="_blank" class="btn-secondary">
+        &lt;/&gt; &nbsp; GitHub Repo
+      </a>
+    </div>
+  </header>
+
+  <div class="divider"></div>
+
+  <!-- ══ DEMO CREDENTIALS ══ -->
+  <section class="reveal">
+    <div class="sec-label">Try it now</div>
+    <h2 class="sec-title">Live Demo Access</h2>
+    <p class="sec-body">The full platform is deployed and running. No installation needed — just open and log in.</p>
+
+    <div class="demo-card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+        <span style="font-size:20px;">🌐</span>
+        <div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:2px;">Deployed App</div>
+          <a href="https://walletwarriors.streamlit.app" target="_blank"
+             style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--cyan);text-decoration:none;letter-spacing:-.01em;">
+            walletwarriors.streamlit.app ↗
+          </a>
+        </div>
+      </div>
+
+      <div class="demo-cred-row">
+        <div class="cred-field">
+          <div class="cred-label">Email</div>
+          <div class="cred-value">dev@walletwarriors.ai</div>
+        </div>
+        <div class="cred-field">
+          <div class="cred-label">Password</div>
+          <div class="cred-value highlight">Dev@2024</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══ PROBLEM ══ -->
+  <section class="reveal">
+    <div class="sec-label">The Problem</div>
+    <h2 class="sec-title">India's Credit Gap Is a Structural Failure</h2>
+    <p class="sec-body">
+      India's credit infrastructure is built for <strong>repeat borrowers</strong>. It systematically
+      penalises first-timers, gig workers, students and freelancers — precisely the segment
+      driving the next wave of economic growth.
+    </p>
+
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-num">Problem 01</div>
+        <div class="problem-title">The Thin File Borrower</div>
+        <div class="problem-body">Over 190 million Indians have no CIBIL score. Not because they're unreliable — because the system was never designed to see them.</div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-num">Problem 02</div>
+        <div class="problem-title">Applying Blind</div>
+        <div class="problem-body">First-time borrowers don't know their approval probability, which lender to approach, or what to fix. Every rejection triggers a hard enquiry and drops their score further.</div>
+      </div>
+    </div>
+
+    <div class="quote-box">
+      <div class="quote-text">"A student who pays electricity on time for 2 years is demonstrating the same reliability as someone with a credit card. We just needed a way to prove it."</div>
+      <div class="quote-attr">— The core insight behind Wallet Warriors</div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══ SOLUTION ══ -->
+  <section class="reveal">
+    <div class="sec-label">What We Built</div>
+    <h2 class="sec-title">A Personal AI Underwriter for Every Borrower</h2>
+    <p class="sec-body">
+      Wallet Warriors runs your financial profile through a <strong>multi-layer analysis engine</strong>
+      and returns an AI credit verdict, explainable scores, personalised recommendations,
+      and a 90-day improvement roadmap — before you walk into any bank.
+    </p>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value">0.86</div>
+        <div class="stat-label">XGBoost AUC</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">6</div>
+        <div class="stat-label">Analysis Pillars</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">90</div>
+        <div class="stat-label">Day Roadmap</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">3</div>
+        <div class="stat-label">Reg Frameworks</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══ FEATURES ══ -->
+  <section class="reveal">
+    <div class="sec-label">Core Features</div>
+    <h2 class="sec-title">Everything in One Intelligence Engine</h2>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔬</div>
+        <div class="feature-name">Income Triangulation Engine</div>
+        <div class="feature-desc">Cross-references declared income against electricity bills, UPI outflows & document proof. Flags incoherence with a Confidence Index score.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-name">XGBoost Credit Model</div>
+        <div class="feature-desc">Gradient-boosted classifier (AUC 0.86) produces a default probability and Approved/Rejected verdict with full SHAP explainability.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🕵️</div>
+        <div class="feature-name">Thin File Engine</div>
+        <div class="feature-desc">No CIBIL? No problem. Reconstructs creditworthiness from bill payment history, UPI consistency, skill signals & savings discipline.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <div class="feature-name">Approval Readiness Score</div>
+        <div class="feature-desc">6-pillar composite score benchmarked against RBI Fair Lending guidelines. Shows exactly where you stand and what to fix.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔎</div>
+        <div class="feature-name">SHAP Explainability</div>
+        <div class="feature-desc">Waterfall charts, bar charts & feature tables show the exact contribution of every factor — turning a black-box into a transparent one.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔮</div>
+        <div class="feature-name">What-If Simulator</div>
+        <div class="feature-desc">Adjust savings, reduce expenses, boost CIBIL — see how your Approval Readiness changes in real time before committing to any action.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <div class="feature-name">Regulatory-Compliant PDF</div>
+        <div class="feature-desc">Downloadable credit intelligence report compliant with RBI guidelines, SEBI disclosure standards & DPDP Act 2023.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎓</div>
+        <div class="feature-name">Hustle Academy</div>
+        <div class="feature-desc">3 in-app financial literacy modules: DTI mastery, UPI consistency signals, and the Credit Invisible → Bankable in 90 Days ladder.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══ TECH STACK ══ -->
+  <section class="reveal">
+    <div class="sec-label">Tech Stack</div>
+    <h2 class="sec-title">Built With Production-Grade Tools</h2>
+
+    <div class="stack-row">
+      <span class="stack-chip">Streamlit</span>
+      <span class="stack-chip">XGBoost</span>
+      <span class="stack-chip">SHAP</span>
+      <span class="stack-chip">Pandas</span>
+      <span class="stack-chip">NumPy</span>
+      <span class="stack-chip">Scikit-Learn</span>
+      <span class="stack-chip cyan">Plotly</span>
+      <span class="stack-chip cyan">Matplotlib</span>
+      <span class="stack-chip cyan">ReportLab</span>
+      <span class="stack-chip cyan">PostgreSQL</span>
+      <span class="stack-chip gold">Python 3.11</span>
+      <span class="stack-chip gold">SHA-256 Auth</span>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══ COMPLIANCE ══ -->
+  <section class="reveal">
+    <div class="sec-label">Regulatory Compliance</div>
+    <h2 class="sec-title">Built to the Standard of Real FinTech</h2>
+    <p class="sec-body">
+      Every generated report is structured against three real Indian regulatory frameworks —
+      not as a checkbox, but as a demo of what production deployment would require.
+    </p>
+
+    <div class="reg-row">
+      <span class="reg-badge">✓ RBI Fair Lending Guidelines</span>
+      <span class="reg-badge">✓ SEBI Disclosure Standards</span>
+      <span class="reg-badge">✓ DPDP Act 2023</span>
+    </div>
+
+    <p class="sec-body" style="margin-top:14px;">
+      Reports include a formal <strong>Data Usage Consent Notice</strong> (DPDP Sections 6, 7 & 13),
+      RBI benchmark columns in the Approval Readiness table, SEBI non-advice disclaimers,
+      a unique Report ID, and five separate regulatory disclaimer blocks.
+    </p>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══ LINKS ══ -->
+  <section class="reveal">
+    <div class="sec-label">Links</div>
+    <h2 class="sec-title">Access the Project</h2>
+
+    <div class="cta-row">
+      <a href="https://walletwarriors.streamlit.app" target="_blank" class="btn-primary">
+        🌐 &nbsp; walletwarriors.streamlit.app
+      </a>
+      <a href="https://github.com/dev0051/Wallet-Warriors" target="_blank" class="btn-secondary">
+        &lt;/&gt; &nbsp; github.com/dev0051/Wallet-Warriors
+      </a>
+    </div>
+
+    <div class="demo-card" style="margin-top:0;">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);
+                  letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;">
+        Demo Credentials — Pro Account
+      </div>
+      <div class="demo-cred-row">
+        <div class="cred-field">
+          <div class="cred-label">Email</div>
+          <div class="cred-value">dev@walletwarriors.ai</div>
+        </div>
+        <div class="cred-field">
+          <div class="cred-label">Password</div>
+          <div class="cred-value highlight">Dev@2024</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;font-size:13px;color:var(--muted);font-style:italic;">
+        A second account also exists: test@walletwarriors.ai / Test@1234 (Starter plan)
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ FOOTER ══ -->
+  <footer class="footer reveal">
+    <div class="footer-logo">⚡ Wallet Warriors</div>
+    <div class="footer-sub">Built at Hackathon &nbsp;·&nbsp; AI / FinTech Track &nbsp;·&nbsp; India</div>
+    <div style="margin-top:16px;font-size:13px;color:var(--muted);">
+      Making credit intelligence accessible to the next 190 million borrowers.
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach((e,i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 80);
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+reveals.forEach(r => observer.observe(r));
+
+// Staggered card animations
+document.querySelectorAll('.feature-card, .problem-card, .stat-card').forEach((card, i) => {
+  card.style.transitionDelay = (i * 60) + 'ms';
+  card.classList.add('reveal');
+  observer.observe(card);
+});
+</script>
+</body>
+</html>
